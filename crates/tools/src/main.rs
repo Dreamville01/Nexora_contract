@@ -12,10 +12,15 @@ mod horizon_client;
 mod horizon_error;
 mod horizon_rate_limit;
 mod horizon_retry;
+mod transaction_submission;
 mod wallet_signing;
 
 use config::{Config, Network};
 use donation_tx_builder::{build_donation_transaction, BuildDonationTxRequest};
+use transaction_submission::{
+    SubmissionConfig, SubmissionLogger, SubmissionRequest, SubmissionResponse,
+    TransactionSubmissionService,
+};
 use wallet_signing::{
     CompleteSigningRequest, PrepareSigningRequest, SigningStatus, WalletSigningService, WalletType,
 };
@@ -147,6 +152,39 @@ enum Commands {
         #[arg(long, default_value = ".wallet_signing_attempts.jsonl")]
         log_file: String,
     },
+    /// Submit a signed transaction to the Stellar network
+    SubmitTx {
+        /// Signed transaction envelope XDR (base64)
+        #[arg(long)]
+        xdr: String,
+        /// Network to submit to (testnet, mainnet)
+        #[arg(short, long, default_value = "testnet")]
+        network: String,
+        /// Maximum submission timeout in seconds
+        #[arg(long, default_value_t = 60)]
+        timeout_seconds: u64,
+        /// Maximum retry attempts for transient failures
+        #[arg(long, default_value_t = 3)]
+        max_retries: u32,
+        /// Disable retry logic
+        #[arg(long, default_value_t = false)]
+        no_retry: bool,
+        /// Log file path for submission attempts
+        #[arg(long, default_value = ".transaction_submissions.jsonl")]
+        log_file: String,
+    },
+    /// Check transaction submission status and statistics
+    SubmissionStatus {
+        /// Show detailed recent submissions
+        #[arg(long, default_value_t = false)]
+        detailed: bool,
+        /// Filter by transaction hash
+        #[arg(long)]
+        tx_hash: Option<String>,
+        /// Log file path
+        #[arg(long, default_value = ".transaction_submissions.jsonl")]
+        log_file: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -275,6 +313,30 @@ fn main() -> Result<()> {
                 timeout_seconds,
                 &log_file,
             )?;
+        },
+        Commands::SubmitTx {
+            xdr,
+            network,
+            timeout_seconds,
+            max_retries,
+            no_retry,
+            log_file,
+        } => {
+            submit_transaction(
+                &xdr,
+                &network,
+                timeout_seconds,
+                max_retries,
+                no_retry,
+                &log_file,
+            )?;
+        },
+        Commands::SubmissionStatus {
+            detailed,
+            tx_hash,
+            log_file,
+        } => {
+            show_submission_status(detailed, tx_hash.as_deref(), &log_file)?;
         },
     }
 
@@ -756,6 +818,152 @@ SOROBAN_NETWORK=testnet
         let empty: serde_json::Value = serde_json::json!({});
         fs::write(&contract_path, serde_json::to_string_pretty(&empty)?)?;
         println!("✅ Created {} file", CONTRACT_ID_FILE);
+    }
+
+    Ok(())
+}
+
+/// Submit a signed transaction to the Stellar network
+fn submit_transaction(
+    xdr: &str,
+    network: &str,
+    timeout_seconds: u64,
+    max_retries: u32,
+    no_retry: bool,
+    log_file: &str,
+) -> Result<()> {
+    use std::time::Duration;
+
+    println!("🚀 Submitting transaction to {}...", network);
+
+    // Determine Horizon URL based on network
+    let horizon_url = match network {
+        "testnet" => "https://horizon-testnet.stellar.org",
+        "mainnet" => "https://horizon.stellar.org",
+        _ => {
+            eprintln!("❌ Unknown network: {}. Use 'testnet' or 'mainnet'", network);
+            std::process::exit(1);
+        }
+    };
+
+    // Build configuration
+    let config = SubmissionConfig {
+        horizon_url: horizon_url.to_string(),
+        timeout: Duration::from_secs(timeout_seconds),
+        max_retries: if no_retry { 0 } else { max_retries },
+        log_path: Some(PathBuf::from(log_file)),
+        ..Default::default()
+    };
+
+    // Create submission service
+    let service = TransactionSubmissionService::with_config(config)
+        .map_err(|e| anyhow::anyhow!("Failed to create submission service: {}", e))?;
+
+    // Create submission request
+    let request = SubmissionRequest::new(xdr)
+        .with_timeout(Duration::from_secs(timeout_seconds))
+        .with_retries(if no_retry { 0 } else { max_retries });
+
+    // Run the submission
+    let runtime = tokio::runtime::Runtime::new()?;
+    let response = runtime.block_on(service.submit(request));
+
+    // Display results
+    match response.status {
+        super::transaction_submission::SubmissionStatus::Success => {
+            println!("✅ Transaction submitted successfully!");
+            println!("   Transaction Hash: {}", response.transaction_hash.as_ref().unwrap());
+            if let Some(ledger) = response.ledger_sequence {
+                println!("   Ledger Sequence: {}", ledger);
+            }
+            println!("   Attempts: {}", response.attempts);
+        }
+        super::transaction_submission::SubmissionStatus::Duplicate => {
+            println!("⚠️  Transaction already submitted (duplicate)");
+            println!("   Transaction Hash: {}", response.transaction_hash.as_ref().unwrap());
+        }
+        _ => {
+            eprintln!("❌ Transaction submission failed");
+            eprintln!("   Status: {:?}", response.status);
+            if let Some(error) = &response.error_message {
+                eprintln!("   Error: {}", error);
+            }
+            if let Some(code) = &response.error_code {
+                eprintln!("   Error Code: {}", code);
+            }
+            eprintln!("   Attempts: {}", response.attempts);
+            std::process::exit(1);
+        }
+    }
+
+    Ok(())
+}
+
+/// Show transaction submission status and statistics
+fn show_submission_status(
+    detailed: bool,
+    tx_hash_filter: Option<&str>,
+    log_file: &str,
+) -> Result<()> {
+    let logger = SubmissionLogger::new(log_file);
+
+    // Load logs from file
+    let logs = logger.load_from_file()?;
+
+    if logs.is_empty() {
+        println!("No submission logs found.");
+        return Ok(());
+    }
+
+    // Filter by transaction hash if specified
+    let filtered_logs: Vec<_> = if let Some(hash) = tx_hash_filter {
+        logs.into_iter()
+            .filter(|log| {
+                log.transaction_hash
+                    .as_ref()
+                    .map(|h| h == hash)
+                    .unwrap_or(false)
+            })
+            .collect()
+    } else {
+        logs
+    };
+
+    if filtered_logs.is_empty() {
+        println!("No submissions found matching the criteria.");
+        return Ok(());
+    }
+
+    // Show statistics
+    let stats = logger.get_stats();
+    println!("📊 Submission Statistics");
+    println!("   Total: {}", stats.total);
+    println!("   Successful: {}", stats.successful);
+    println!("   Failed: {}", stats.failed);
+    println!("   Pending: {}", stats.pending);
+    println!("   Duplicates: {}", stats.duplicates);
+    println!("   Avg Duration: {}ms", stats.avg_duration_ms);
+
+    // Show detailed logs if requested
+    if detailed {
+        println!("\n📋 Recent Submissions:");
+        for log in filtered_logs.iter().rev().take(10) {
+            println!("\n   Request ID: {}", log.request_id);
+            println!("   Status: {}", log.status);
+            if let Some(hash) = &log.transaction_hash {
+                println!("   Transaction Hash: {}", hash);
+            }
+            if let Some(ledger) = log.ledger_sequence {
+                println!("   Ledger: {}", ledger);
+            }
+            println!("   Timestamp: {}", log.timestamp);
+            println!("   Duration: {}ms", log.duration_ms);
+            println!("   Attempts: {}", log.attempts);
+            if let Some(error) = &log.error_message {
+                println!("   Error: {}", error);
+            }
+            println!("   ---");
+        }
     }
 
     Ok(())
