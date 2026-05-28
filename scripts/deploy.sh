@@ -5,10 +5,10 @@
 #   bash scripts/deploy.sh [testnet|sandbox|mainnet]
 #
 # Environment variables (loaded from .env if present):
-#   SOROBAN_ADMIN_SECRET_KEY  — funded account secret key (required)
+#   SOROBAN_ADMIN_SECRET_KEY  — funded account secret key
 #   SOROBAN_NETWORK           — fallback network name (default: testnet)
 #
-# Closes #160
+# Closes #159, #160
 
 set -euo pipefail
 
@@ -55,16 +55,13 @@ if [ ! -f "$WASM_PATH" ]; then
 fi
 
 if [ -z "${SOROBAN_ADMIN_SECRET_KEY:-}" ]; then
-  echo "❌ SOROBAN_ADMIN_SECRET_KEY is not set."
-  echo "   Add it to .env or export it before running this script."
+  echo "❌ SOROBAN_ADMIN_SECRET_KEY is not set. Add it to .env or export it."
   exit 1
 fi
 
 # ── Idempotency check ─────────────────────────────────────────────────────────
 if [ -f "$DEPLOYMENT_FILE" ]; then
-  EXISTING_ID=$(python3 -c \
-    "import json; d=json.load(open('$DEPLOYMENT_FILE')); print(d.get('contract_id',''))" \
-    2>/dev/null || true)
+  EXISTING_ID=$(python3 -c "import json,sys; d=json.load(open('$DEPLOYMENT_FILE')); print(d.get('contract_id',''))" 2>/dev/null || true)
   if [ -n "$EXISTING_ID" ]; then
     echo "ℹ️  Contract already deployed on $NETWORK: $EXISTING_ID"
     echo "   Delete $DEPLOYMENT_FILE to force a re-deploy."
@@ -73,8 +70,8 @@ if [ -f "$DEPLOYMENT_FILE" ]; then
 fi
 
 # ── Deploy ────────────────────────────────────────────────────────────────────
-echo "🚀 Deploying StellarAid core contract to $NETWORK..."
-echo "   RPC:  $RPC_URL"
+echo "🚀 Deploying to $NETWORK..."
+echo "   RPC: $RPC_URL"
 echo "   WASM: $WASM_PATH"
 
 CONTRACT_ID=$(stellar contract deploy \
@@ -101,6 +98,6 @@ EOF
 
 echo "💾 Deployment record saved to $DEPLOYMENT_FILE"
 
-# Backward-compatible plain contract-ID file
+# Also write the plain contract-ID file for backward compatibility
 echo "$CONTRACT_ID" > .stellaraid_contract_id
-echo "✅ Contract ID also stored in .stellaraid_contract_id"
+echo "✅ Contract ID stored in .stellaraid_contract_id"
