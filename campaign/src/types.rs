@@ -10,6 +10,7 @@ pub enum Error {
     InvalidGoalAmount,        // goal_amount must be > 0
     InvalidEndTime,           // end_time must be > current ledger timestamp
     InvalidAssets,            // accepted_assets must be non-empty
+    InvalidAssetCode,         // asset_code must be non-empty and valid
     InvalidMilestones,        // milestones must be sorted ascending and last must equal goal
     MilestoneMismatch,        // last milestone.target_amount != goal_amount
     
@@ -51,7 +52,26 @@ pub enum MilestoneStatus {
     Released, // Funds released to beneficiary
 }
 
+/// Reusable struct for Stellar asset representation
+/// Enables consistent multi-asset support across the contract
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StellarAsset {
+    /// Asset code (e.g., "XLM", "USDC", "EUR")
+    pub asset_code: soroban_sdk::String,
+    /// Issuer address; None for native XLM
+    pub issuer: Option<Address>,
+}
+
+impl StellarAsset {
+    /// Helper function to check if this asset is native XLM
+    pub fn is_xlm(&self) -> bool {
+        self.issuer.is_none()
+    }
+}
+
 /// Accepted asset descriptor (native XLM or a Stellar asset)
+/// Deprecated: Use StellarAsset instead
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AssetInfo {
