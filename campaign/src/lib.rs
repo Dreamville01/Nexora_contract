@@ -4,7 +4,7 @@ pub mod storage;
 pub mod types;
 
 use soroban_sdk::{contract, contractimpl, Env, Vec};
-use types::{AssetInfo, CampaignData, CampaignStatus, Error, MilestoneData};
+use types::{AssetInfo, CampaignData, CampaignStatus, Error, MilestoneData, MilestoneStatus};
 use storage::{get_campaign, set_campaign, set_milestone};
 
 #[contract]
@@ -105,21 +105,90 @@ fn validate_milestones(
 
 /// Helper function to panic with a descriptive error message
 fn panic_with_error(env: &Env, error: Error) -> ! {
-    match error {
-        Error::InvalidGoalAmount => {
-            env.panic_with_error(soroban_sdk::Symbol::new(env, "InvalidGoalAmount"))
+    let error_name = match error {
+        Error::InvalidGoalAmount => "InvalidGoalAmount",
+        Error::InvalidEndTime => "InvalidEndTime",
+        Error::InvalidAssets => "InvalidAssets",
+        Error::InvalidMilestones => "InvalidMilestones",
+        Error::MilestoneMismatch => "MilestoneMismatch",
+        Error::InvalidCampaignTransition => "InvalidCampaignTransition",
+        Error::InvalidMilestoneTransition => "InvalidMilestoneTransition",
+        Error::CampaignNotActive => "CampaignNotActive",
+        Error::CampaignEnded => "CampaignEnded",
+        Error::GoalNotReached => "GoalNotReached",
+    };
+    env.panic_with_error(soroban_sdk::Symbol::new(env, error_name))
+}
+
+/// Validates campaign status transitions and panics if invalid
+/// 
+/// Valid transitions:
+///   Active -> GoalReached (when goal reached)
+///   Active -> Ended (when deadline passes)
+///   GoalReached -> Ended (when deadline passes)
+///   Active/GoalReached/Ended -> Cancelled (by creator)
+pub fn validate_campaign_transition(
+    env: &Env,
+    current_status: &CampaignStatus,
+    next_status: &CampaignStatus,
+) -> Result<(), Error> {
+    match (current_status, next_status) {
+        // Active can transition to GoalReached, Ended, or Cancelled
+        (CampaignStatus::Active, CampaignStatus::GoalReached) => Ok(()),
+        (CampaignStatus::Active, CampaignStatus::Ended) => Ok(()),
+        (CampaignStatus::Active, CampaignStatus::Cancelled) => Ok(()),
+        
+        // GoalReached can transition to Ended or Cancelled
+        (CampaignStatus::GoalReached, CampaignStatus::Ended) => Ok(()),
+        (CampaignStatus::GoalReached, CampaignStatus::Cancelled) => Ok(()),
+        
+        // Ended can only transition to Cancelled
+        (CampaignStatus::Ended, CampaignStatus::Cancelled) => Ok(()),
+        
+        // Cancelled is terminal
+        (CampaignStatus::Cancelled, _) => {
+            panic_with_error(env, Error::InvalidCampaignTransition);
         }
-        Error::InvalidEndTime => {
-            env.panic_with_error(soroban_sdk::Symbol::new(env, "InvalidEndTime"))
+        
+        // All other transitions are invalid
+        _ => {
+            panic_with_error(env, Error::InvalidCampaignTransition);
         }
-        Error::InvalidAssets => {
-            env.panic_with_error(soroban_sdk::Symbol::new(env, "InvalidAssets"))
+    }
+}
+
+/// Validates milestone status transitions and panics if invalid
+/// 
+/// Valid transitions:
+///   Locked -> Unlocked (when target_amount reached)
+///   Unlocked -> Released (when explicitly released)
+///   Locked -> Released (direct transition allowed)
+pub fn validate_milestone_transition(
+    env: &Env,
+    current_status: &MilestoneStatus,
+    next_status: &MilestoneStatus,
+) -> Result<(), Error> {
+    match (current_status, next_status) {
+        // Locked can transition to Unlocked or Released
+        (MilestoneStatus::Locked, MilestoneStatus::Unlocked) => Ok(()),
+        (MilestoneStatus::Locked, MilestoneStatus::Released) => Ok(()),
+        
+        // Unlocked can transition to Released
+        (MilestoneStatus::Unlocked, MilestoneStatus::Released) => Ok(()),
+        
+        // Released is terminal
+        (MilestoneStatus::Released, _) => {
+            panic_with_error(env, Error::InvalidMilestoneTransition);
         }
-        Error::InvalidMilestones => {
-            env.panic_with_error(soroban_sdk::Symbol::new(env, "InvalidMilestones"))
+        
+        // Prevent Unlocked -> Locked (going backwards)
+        (MilestoneStatus::Unlocked, MilestoneStatus::Locked) => {
+            panic_with_error(env, Error::InvalidMilestoneTransition);
         }
-        Error::MilestoneMismatch => {
-            env.panic_with_error(soroban_sdk::Symbol::new(env, "MilestoneMismatch"))
+        
+        // All other transitions are invalid
+        _ => {
+            panic_with_error(env, Error::InvalidMilestoneTransition);
         }
     }
 }

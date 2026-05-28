@@ -2,36 +2,53 @@ use soroban_sdk::{contracttype, Address, BytesN, Vec};
 
 // ── Error enum ──────────────────────────────────────────────────────────────
 
-/// Initialization validation errors
+/// All error types for validation and state transitions
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Error {
-    InvalidGoalAmount,    // goal_amount must be > 0
-    InvalidEndTime,       // end_time must be > current ledger timestamp
-    InvalidAssets,        // accepted_assets must be non-empty
-    InvalidMilestones,    // milestones must be sorted ascending and last must equal goal
-    MilestoneMismatch,    // last milestone.target_amount != goal_amount
+    // ── Initialization validation errors ──
+    InvalidGoalAmount,        // goal_amount must be > 0
+    InvalidEndTime,           // end_time must be > current ledger timestamp
+    InvalidAssets,            // accepted_assets must be non-empty
+    InvalidMilestones,        // milestones must be sorted ascending and last must equal goal
+    MilestoneMismatch,        // last milestone.target_amount != goal_amount
+    
+    // ── State transition errors ──
+    InvalidCampaignTransition, // campaign status transition not allowed
+    InvalidMilestoneTransition,// milestone status transition not allowed
+    CampaignNotActive,        // campaign must be Active to accept donations
+    CampaignEnded,            // campaign end_time has passed
+    GoalNotReached,           // cannot transition to GoalReached before reaching goal
 }
 
 // ── Supporting enums ─────────────────────────────────────────────────────────
 
 /// Issue #167 – campaign lifecycle status
+/// State transitions:
+///   Active -> GoalReached (goal reached)
+///   Active -> Ended (deadline passed)
+///   GoalReached -> Ended (deadline passed)
+///   Active/GoalReached/Ended -> Cancelled (by creator)
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CampaignStatus {
-    Active,
-    Successful,
-    Failed,
-    Cancelled,
+    Active,      // Campaign accepting donations
+    GoalReached, // Goal amount reached, still accepting donations until deadline
+    Ended,       // Deadline passed or campaign concluded
+    Cancelled,   // Campaign cancelled by creator
 }
 
 /// Issue #168 – milestone release status
+/// State transitions:
+///   Locked -> Unlocked (when target_amount reached)
+///   Unlocked -> Released (when explicitly released by admin)
+///   Locked/Unlocked -> Released (milestone marked as released)
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MilestoneStatus {
-    Pending,
-    Released,
-    Cancelled,
+    Locked,   // Milestone condition not yet met
+    Unlocked, // Target amount reached, awaiting release
+    Released, // Funds released to beneficiary
 }
 
 /// Accepted asset descriptor (native XLM or a Stellar asset)
