@@ -4,8 +4,8 @@ pub mod storage;
 pub mod types;
 
 use soroban_sdk::{contract, contractimpl, Address, Env, Vec};
-use types::{CampaignData, CampaignStatus, Error, MilestoneData, MilestoneStatus, StellarAsset, CampaignEvent, AssetInfo};
-use storage::{get_campaign, set_campaign, set_milestone};
+use types::{CampaignData, CampaignInitializedEvent, CampaignStatus, DonorRecord, Error, MilestoneData, MilestoneStatus, StellarAsset, AssetInfo};
+use storage::{get_campaign, set_campaign, get_milestone, set_milestone, get_donor, set_donor, get_total_raised as storage_get_total_raised, set_total_raised};
 
 pub const VERSION: u32 = 1;
 
@@ -101,11 +101,15 @@ impl CampaignContract {
     ///
     /// Panics with `Error::CampaignNotActive` unless status is `Active` or `GoalReached`.
     /// The status check is atomic with the state update to prevent race conditions.
-    pub fn donate(env: Env, donor: Address, amount: i128, _asset: AssetInfo) {
+    ///
+    /// Issue #195 – After updating raised_amount, loops over milestones and unlocks
+    ///              any whose target_amount <= raised_amount and status == Locked.
+    /// Issue #198 – After donation, transitions to GoalReached if raised_amount >= goal_amount.
+    pub fn donate(env: Env, donor: Address, amount: i128, asset: AssetInfo) {
         donor.require_auth();
 
         let mut campaign: CampaignData = get_campaign(&env)
-            .unwrap_or_else(|| panic_with_error(&env, Error::AlreadyInitialized));
+            .unwrap_or_else(|| panic_with_error(&env, Error::NotInitialized));
 
         // Issue #194 – status check: only Active or GoalReached campaigns accept donations
         match campaign.status {
@@ -113,10 +117,67 @@ impl CampaignContract {
             _ => panic_with_error(&env, Error::CampaignNotActive),
         }
 
+        // Issue #195 – update raised_amount atomically
         campaign.raised_amount += amount;
+
+        // Issue #198 – goal reached status transition
+        if campaign.raised_amount >= campaign.goal_amount
+            && campaign.status == CampaignStatus::Active
+        {
+            campaign.status = CampaignStatus::GoalReached;
+            env.events().publish(
+                ("campaign", "campaign_goal_reached"),
+                campaign.raised_amount,
+            );
+        }
+
         set_campaign(&env, &campaign);
 
+        // Issue #195 – update TotalRaised storage
+        let new_total = storage_get_total_raised(&env) + amount;
+        set_total_raised(&env, new_total);
+
+        // Issue #195 – update donor record
+        let mut donor_record = get_donor(&env, &donor).unwrap_or(DonorRecord {
+            donor: donor.clone(),
+            total_donated: 0,
+            asset: asset.clone(),
+            last_donation_time: 0,
+        });
+        donor_record.total_donated += amount;
+        donor_record.asset = asset;
+        donor_record.last_donation_time = env.ledger().timestamp();
+        set_donor(&env, &donor, &donor_record);
+
+        // Issue #195 – milestone unlock check
+        for i in 0..campaign.milestone_count {
+            if let Some(mut milestone) = get_milestone(&env, i) {
+                if milestone.status == MilestoneStatus::Locked
+                    && campaign.raised_amount >= milestone.target_amount
+                {
+                    milestone.status = MilestoneStatus::Unlocked;
+                    set_milestone(&env, i, &milestone);
+                    env.events().publish(
+                        ("campaign", "milestone_unlocked"),
+                        (i, milestone.target_amount),
+                    );
+                }
+            }
+        }
+
         env.events().publish(("campaign", "donation_received"), (donor, amount));
+    }
+
+    /// Issue #197 – Returns the total amount raised by the campaign.
+    /// No auth required. Returns 0 if no donations yet.
+    pub fn get_total_raised(env: Env) -> i128 {
+        storage_get_total_raised(&env)
+    }
+
+    /// Issue #196 – Returns the donor record for the given address.
+    /// No auth required. Returns None if the address has never donated.
+    pub fn get_donor_record(env: Env, donor: Address) -> Option<DonorRecord> {
+        get_donor(&env, &donor)
     }
 
     pub fn hello(env: Env) -> soroban_sdk::Symbol {
@@ -211,24 +272,7 @@ fn validate_milestones(
 /// Panics the contract execution with the given error code.
 /// With `contracterror`, `Error` implements `Into<soroban_sdk::Error>` directly.
 fn panic_with_error(env: &Env, error: Error) -> ! {
-    let error_name = match error {
-        Error::InvalidGoalAmount => "InvalidGoalAmount",
-        Error::InvalidEndTime => "InvalidEndTime",
-        Error::InvalidAssets => "InvalidAssets",
-        Error::InvalidAssetCode => "InvalidAssetCode",
-        Error::InvalidMilestones => "InvalidMilestones",
-        Error::MilestoneMismatch => "MilestoneMismatch",
-        Error::InvalidMilestoneCount => "InvalidMilestoneCount",
-        Error::AlreadyInitialized => "AlreadyInitialized",
-        Error::UnauthorizedCreator => "UnauthorizedCreator",
-        Error::InvalidCampaignTransition => "InvalidCampaignTransition",
-        Error::InvalidMilestoneTransition => "InvalidMilestoneTransition",
-        Error::CampaignNotActive => "CampaignNotActive",
-        Error::CampaignEnded => "CampaignEnded",
-        Error::GoalNotReached => "GoalNotReached",
-        Error::DonationTooSmall => "DonationTooSmall",
-    };
-    env.panic_with_error(soroban_sdk::Symbol::new(env, error_name))
+    env.panic_with_error(error)
 }
 
 /// Validates campaign status transitions; panics if invalid.
