@@ -39,6 +39,7 @@ impl CampaignContract {
         end_time: u64,
         accepted_assets: Vec<StellarAsset>,
         milestones: Vec<MilestoneData>,
+        min_donation_amount: i128,
     ) -> Result<(), Error> {
         // Authorization check: creator must authorize this call
         creator.require_auth();
@@ -85,6 +86,7 @@ impl CampaignContract {
             status: CampaignStatus::Active,
             accepted_assets: accepted_assets.clone(),
             milestone_count,
+            min_donation_amount,
         };
 
         set_campaign(&env, &campaign);
@@ -195,6 +197,7 @@ fn panic_with_error(env: &Env, error: Error) -> ! {
         Error::CampaignNotActive => "CampaignNotActive",
         Error::CampaignEnded => "CampaignEnded",
         Error::GoalNotReached => "GoalNotReached",
+        Error::DonationTooSmall => "DonationTooSmall",
     };
     env.panic_with_error(soroban_sdk::Symbol::new(env, error_name))
 }
