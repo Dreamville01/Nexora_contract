@@ -539,3 +539,15 @@ pub enum CampaignStatus {
     Failed,
     Cancelled,
 }
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub enum CampaignStatus {
+    Active,
+    GoalReached,
+    Ended,
+    Successful,
+    Failed,
+    Cancelled,
+}
+

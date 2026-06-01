@@ -38,3 +38,15 @@ pub fn extend_deadline(
 pub fn cancel_campaign(
     env: Env,
 ) 
+
+let campaign = CampaignStorage::get(&env);
+
+let current_time =
+    env.ledger().timestamp();
+
+if current_time >= campaign.end_time {
+    panic_with_error!(
+        &env,
+        CampaignError::CampaignEnded
+    );
+}

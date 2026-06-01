@@ -20,3 +20,9 @@ pub enum CampaignError {
     CampaignAlreadyCancelled = 3,
 }
 
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum CampaignError {
+    CampaignEnded = 1,
+}
+

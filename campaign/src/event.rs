@@ -28,3 +28,12 @@ pub fn campaign_cancelled(
     );
 }
 
+use soroban_sdk::Env;
+
+pub fn campaign_ended(env: &Env) {
+    env.events().publish(
+        ("campaign", "campaign_ended"),
+        (),
+    );
+}
+
