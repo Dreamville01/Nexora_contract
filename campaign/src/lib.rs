@@ -1,9 +1,10 @@
 #![no_std]
 
+pub mod event;
 pub mod storage;
 pub mod types;
 
-use soroban_sdk::{contract, contractimpl, Address, Env, Vec};
+use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 use types::{CampaignData, CampaignInitializedEvent, CampaignStatus, DonorRecord, Error, MilestoneData, MilestoneStatus, StellarAsset, AssetInfo};
 use storage::{get_campaign, set_campaign, get_milestone, set_milestone, get_donor, set_donor, get_total_raised as storage_get_total_raised, set_total_raised};
 
@@ -157,15 +158,15 @@ impl CampaignContract {
                 {
                     milestone.status = MilestoneStatus::Unlocked;
                     set_milestone(&env, i, &milestone);
-                    env.events().publish(
-                        ("campaign", "milestone_unlocked"),
-                        (i, milestone.target_amount),
-                    );
+                    // Issue #229 – emit milestone_unlocked event
+                    event::milestone_unlocked(&env, i, milestone.target_amount, campaign.raised_amount);
                 }
             }
         }
 
-        env.events().publish(("campaign", "donation_received"), (donor, amount));
+        // Issue #228 – emit donation_received event with required schema
+        let asset_code = resolve_asset_code(&env, &asset, &campaign);
+        event::donation_received(&env, &donor, amount, asset_code, campaign.raised_amount, env.ledger().timestamp());
     }
 
     /// Issue #197 – Returns the total amount raised by the campaign.
@@ -267,6 +268,22 @@ fn validate_milestones(
     }
 
     Ok(())
+}
+
+/// Resolves the asset code string for an AssetInfo.
+/// For Native XLM returns "XLM"; for Stellar(addr) looks up the code in accepted_assets.
+fn resolve_asset_code(env: &Env, asset: &AssetInfo, campaign: &CampaignData) -> String {
+    match asset {
+        AssetInfo::Native => String::from_str(env, "XLM"),
+        AssetInfo::Stellar(addr) => {
+            campaign
+                .accepted_assets
+                .iter()
+                .find(|a| a.issuer == Some(addr.clone()))
+                .map(|a| a.asset_code.clone())
+                .unwrap_or_else(|| String::from_str(env, "UNKNOWN"))
+        }
+    }
 }
 
 /// Panics the contract execution with the given error code.
