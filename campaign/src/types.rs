@@ -107,6 +107,10 @@ pub enum Error {
     // ── Amount validation ───────────────────────────────────────────────────────── 7x
     /// A generic negative or otherwise invalid amount was supplied.
     InvalidAmount               = 70,
+
+    // ── Upgrade / freeze ─────────────────────────────────────────────────── 8x
+    /// Contract is frozen; all mutating operations are blocked.
+    ContractFrozen              = 80,
 }
 
 
@@ -235,6 +239,8 @@ pub enum DataKey {
     ContractStatus,
     /// Re-entrancy guard; present = locked, absent = unlocked.
     ReentrancyLock,
+    /// Freeze flag; present and true = contract is frozen, mutating ops blocked.
+    Frozen,
 }
 
 // ─── Asset types ──────────────────────────────────────────────────────────────

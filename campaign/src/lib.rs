@@ -3,10 +3,12 @@
 pub mod event;
 pub mod storage;
 pub mod types;
+pub mod release_milestone;
+pub mod multi_asset_release;
 
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec, BytesN};
 use types::{CampaignData, CampaignInitializedEvent, CampaignStatus, DonorRecord, Error, MilestoneData, MilestoneStatus, StellarAsset, AssetInfo};
-use storage::{get_campaign, set_campaign, get_milestone, set_milestone, get_donor, set_donor, get_total_raised as storage_get_total_raised, storage_set_total_raised, increment_donor_asset_donation, get_donor_asset_donation};
+use storage::{get_campaign, set_campaign, get_milestone, set_milestone, get_donor, set_donor, get_total_raised as storage_get_total_raised, storage_set_total_raised, increment_donor_asset_donation, get_donor_asset_donation, is_frozen, set_frozen};
 
 pub const VERSION: u32 = 1;
 
@@ -116,6 +118,11 @@ impl CampaignContract {
     /// Issue #198 – After donation, transitions to GoalReached if raised_amount >= goal_amount.
     pub fn donate(env: Env, donor: Address, amount: i128, asset: AssetInfo) {
         donor.require_auth();
+
+        // Freeze check — reject all mutating operations while frozen
+        if is_frozen(&env) {
+            panic_with_error(&env, Error::ContractFrozen);
+        }
 
         let mut campaign: CampaignData = get_campaign(&env)
             .unwrap_or_else(|| panic_with_error(&env, Error::NotInitialized));
@@ -304,6 +311,11 @@ impl CampaignContract {
     pub fn claim_refund(env: Env, donor: Address) {
         donor.require_auth();
 
+        // Freeze check — reject all mutating operations while frozen
+        if is_frozen(&env) {
+            panic_with_error(&env, Error::ContractFrozen);
+        }
+
         let campaign = get_campaign(&env)
             .unwrap_or_else(|| panic_with_error(&env, Error::NotInitialized));
 
@@ -394,6 +406,66 @@ impl CampaignContract {
             (&donor, donor_record.total_donated),
         );
     }
+
+    /// Issue #246 – Upgrade the contract's WASM hash.
+    ///
+    /// Only the admin (creator address stored at initialization) can call this.
+    /// Emits `contract_upgraded` event on success.
+    ///
+    /// # Panics
+    /// - `Error::Unauthorized` if not called by the creator
+    /// - `Error::NotInitialized` if campaign not yet initialized
+    pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) {
+        let campaign = get_campaign(&env)
+            .unwrap_or_else(|| panic_with_error(&env, Error::NotInitialized));
+
+        campaign.creator.require_auth();
+
+        // Actually deploy the new WASM hash to the contract
+        env.deployer().update_current_contract_wasm(new_wasm_hash.clone());
+
+        let timestamp = env.ledger().timestamp();
+        event::contract_upgraded(&env, &campaign.creator, new_wasm_hash, timestamp);
+    }
+
+    /// Issue #246 – Freeze the contract, blocking all mutating operations.
+    ///
+    /// Only the admin (creator) can call this.
+    /// While frozen, all write operations are rejected with `Error::ContractFrozen`.
+    ///
+    /// # Panics
+    /// - `Error::Unauthorized` if not called by the creator
+    /// - `Error::NotInitialized` if campaign not yet initialized
+    pub fn freeze(env: Env) {
+        let campaign = get_campaign(&env)
+            .unwrap_or_else(|| panic_with_error(&env, Error::NotInitialized));
+
+        campaign.creator.require_auth();
+
+        set_frozen(&env, true);
+
+        let timestamp = env.ledger().timestamp();
+        event::contract_frozen(&env, &campaign.creator, timestamp);
+    }
+
+    /// Issue #246 – Unfreeze the contract, re-enabling mutating operations.
+    ///
+    /// Only the admin (creator) can call this.
+    ///
+    /// # Panics
+    /// - `Error::Unauthorized` if not called by the creator
+    /// - `Error::NotInitialized` if campaign not yet initialized
+    pub fn unfreeze(env: Env) {
+        let campaign = get_campaign(&env)
+            .unwrap_or_else(|| panic_with_error(&env, Error::NotInitialized));
+
+        campaign.creator.require_auth();
+
+        set_frozen(&env, false);
+
+        let timestamp = env.ledger().timestamp();
+        event::contract_unfrozen(&env, &campaign.creator, timestamp);
+    }
 }
 
 /// Issue #175 – assert the current invoker is the campaign creator.
@@ -481,6 +553,7 @@ mod test {
     pub mod refund_eligibility_tests;
     pub mod claim_refund_tests;
     pub mod integration_tests;
+    pub mod release_milestone_tests;
 }
 
 /// Resolves the asset code string for an AssetInfo.

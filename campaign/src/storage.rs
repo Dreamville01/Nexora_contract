@@ -285,6 +285,28 @@ pub fn release_lock(env: &Env) {
     env.storage().temporary().remove(&LOCK_KEY);
 }
 
+// ─── Freeze flag (persistent) ─────────────────────────────────────────────────
+
+/// Check whether the contract is currently frozen.
+/// Returns `false` if the flag has never been set.
+pub fn is_frozen(env: &Env) -> bool {
+    let key = DataKey::Frozen;
+    let frozen: bool = env
+        .storage()
+        .persistent()
+        .get(&key)
+        .unwrap_or(false);
+    bump_persistent(env, &key);
+    frozen
+}
+
+/// Set the contract freeze flag.
+pub fn set_frozen(env: &Env, frozen: bool) {
+    let key = DataKey::Frozen;
+    env.storage().persistent().set(&key, &frozen);
+    bump_persistent(env, &key);
+}
+
 // ─── Bulk TTL refresh ─────────────────────────────────────────────────────────
 
 /// Refresh TTL for all core persistent keys in a single call.

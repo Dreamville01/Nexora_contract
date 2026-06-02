@@ -53,3 +53,27 @@ pub fn milestone_released(
     let topics = (Symbol::new(env, "milestone_released"), env.current_contract_address());
     env.events().publish(topics, (milestone_index, amount, asset_code, recipient, timestamp));
 }
+
+/// Issue #246 – Emitted when the contract is upgraded by the admin.
+pub fn contract_upgraded(env: &Env, admin: &Address, new_wasm_hash: soroban_sdk::BytesN<32>, timestamp: u64) {
+    env.events().publish(
+        ("campaign", "contract_upgraded"),
+        (admin, new_wasm_hash, timestamp),
+    );
+}
+
+/// Issue #246 – Emitted when the contract is frozen by the admin.
+pub fn contract_frozen(env: &Env, admin: &Address, timestamp: u64) {
+    env.events().publish(
+        ("campaign", "contract_frozen"),
+        (admin, timestamp),
+    );
+}
+
+/// Issue #246 – Emitted when the contract is unfrozen by the admin.
+pub fn contract_unfrozen(env: &Env, admin: &Address, timestamp: u64) {
+    env.events().publish(
+        ("campaign", "contract_unfrozen"),
+        (admin, timestamp),
+    );
+}
