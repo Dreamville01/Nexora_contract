@@ -21,7 +21,7 @@ impl CampaignContract {
     /// Can only be called once per contract instance
     ///
     /// # Panics
-    /// - `Error::UnauthorizedCreator`   if caller is not the creator
+    /// - `Error::Unauthorized`   if caller is not the creator
     /// - `Error::AlreadyInitialized`    if campaign already exists
     /// - `Error::InvalidGoalAmount`     if goal_amount <= 0
     /// - `Error::InvalidEndTime`        if end_time <= current ledger timestamp
@@ -118,8 +118,15 @@ impl CampaignContract {
             _ => panic_with_error(&env, Error::CampaignNotActive),
         }
 
+        if amount <= 0 || (campaign.min_donation_amount > 0 && amount < campaign.min_donation_amount) {
+            panic_with_error(&env, Error::DonationTooSmall);
+        }
+
         // Issue #195 – update raised_amount atomically
-        campaign.raised_amount += amount;
+        campaign.raised_amount = campaign
+            .raised_amount
+            .checked_add(amount)
+            .unwrap_or_else(|| panic_with_error(&env, Error::Overflow));
 
         // Issue #198 – goal reached status transition
         if campaign.raised_amount >= campaign.goal_amount
@@ -135,7 +142,9 @@ impl CampaignContract {
         set_campaign(&env, &campaign);
 
         // Issue #195 – update TotalRaised storage
-        let new_total = storage_get_total_raised(&env) + amount;
+        let new_total = storage_get_total_raised(&env)
+            .checked_add(amount)
+            .unwrap_or_else(|| panic_with_error(&env, Error::Overflow));
         set_total_raised(&env, new_total);
 
         // Issue #195 – update donor record
@@ -145,7 +154,10 @@ impl CampaignContract {
             asset: asset.clone(),
             last_donation_time: 0,
         });
-        donor_record.total_donated += amount;
+        donor_record.total_donated = donor_record
+            .total_donated
+            .checked_add(amount)
+            .unwrap_or_else(|| panic_with_error(&env, Error::Overflow));
         donor_record.asset = asset;
         donor_record.last_donation_time = env.ledger().timestamp();
         set_donor(&env, &donor, &donor_record);
@@ -193,11 +205,11 @@ impl CampaignContract {
 /// Issue #175 – assert the current invoker is the campaign creator.
 ///
 /// Reads the creator address from campaign storage and calls `require_auth()`.
-/// Panics with `Error::UnauthorizedCreator` if the campaign is not initialized;
+/// Panics with `Error::Unauthorized` if the campaign is not initialized;
 /// Soroban's auth framework panics if the invoker is not the creator.
 fn require_creator(env: &Env) {
     let campaign =
-        get_campaign(env).unwrap_or_else(|| panic_with_error(env, Error::UnauthorizedCreator));
+        get_campaign(env).unwrap_or_else(|| panic_with_error(env, Error::Unauthorized));
     campaign.creator.require_auth();
 }
 

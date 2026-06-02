@@ -25,7 +25,10 @@ pub fn release_milestone(env: &Env, milestone_index: u32, recipient: Address) {
         soroban_sdk::panic_with_error!(env, Error::InvalidMilestoneTransition);
     }
 
-    let release_amount = milestone.target_amount - milestone.released_amount;
+    let release_amount = milestone
+        .target_amount
+        .checked_sub(milestone.released_amount)
+        .unwrap_or_else(|| soroban_sdk::panic_with_error!(env, Error::Overflow));
 
     // Transfer each accepted asset proportionally
     for asset in campaign.accepted_assets.iter() {

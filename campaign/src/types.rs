@@ -12,54 +12,62 @@ use soroban_sdk::{contracttype, contracterror, Address, BytesN, String, Vec};
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Error {
-    // ── Initialisation validation ──────────────────────────────────────── 1x
-    /// `goal_amount` must be > 0.
-    InvalidGoalAmount           = 1,
-    /// `end_time` must be strictly greater than the current ledger timestamp.
-    InvalidEndTime              = 2,
-    /// `accepted_assets` must be non-empty.
-    InvalidAssets               = 3,
-    /// `asset_code` must be non-empty and ≤ 12 characters (Stellar limit).
-    InvalidAssetCode            = 4,
-    /// Milestone `target_amount` values must be strictly ascending and the
-    /// last must equal `goal_amount`.
-    InvalidMilestones           = 5,
-    /// Last milestone `target_amount` does not equal `goal_amount`.
-    MilestoneMismatch           = 6,
-    /// Milestone count must be in the range [1, MAX_MILESTONES].
-    InvalidMilestoneCount       = 7,
+    // ── Requested contract error codes ────────────────────────────────────
     /// `initialize` called on an already-initialised contract.
-    AlreadyInitialized          = 8,
-    /// Caller is not the campaign creator or lacks the required authorisation.
-    UnauthorizedCreator         = 9,
-
-    // ── State transitions ──────────────────────────────────────────────── 1x
-    /// The requested campaign status transition is not permitted.
-    InvalidCampaignTransition   = 10,
-    /// The requested milestone status transition is not permitted.
-    InvalidMilestoneTransition  = 11,
-    /// Operation requires the campaign to be `Active`.
-    CampaignNotActive           = 12,
-    /// The campaign deadline has already passed.
-    CampaignEnded               = 13,
-    /// Cannot transition to `GoalReached` — raised amount < goal.
-    GoalNotReached              = 14,
-
-    // ── Runtime / call-site errors ─────────────────────────────────────── 1x
+    AlreadyInitialized          = 1,
     /// Contract has not been initialised yet.
-    NotInitialized              = 15,
-    /// Donated asset is not in the campaign's `accepted_assets` list.
-    AssetNotAccepted            = 16,
-    /// Donation amount must be > 0 (and ≥ `min_donation_amount` if set).
-    InvalidDonationAmount       = 17,
-
-    // ── Arithmetic & storage ───────────────────────────────────────────── 2x
+    NotInitialized              = 2,
+    /// Caller is not authorised to perform the operation.
+    Unauthorized                = 3,
+    /// The campaign deadline has already passed.
+    CampaignEnded               = 4,
+    /// Operation requires the campaign to be `Active` or `GoalReached`.
+    CampaignNotActive           = 5,
+    /// Donated asset is not in the campaign's accepted assets list.
+    AssetNotAccepted            = 6,
+    /// Donation amount is below the campaign's minimum threshold.
+    DonationTooSmall            = 7,
+    /// Milestone index is out of range for this campaign.
+    MilestoneNotFound           = 8,
+    /// Milestone has not been unlocked yet and cannot be released.
+    MilestoneNotUnlocked        = 9,
+    /// A previous milestone must be released before this one can be released.
+    PreviousMilestoneNotReleased = 10,
+    /// Cannot cancel the campaign while it still holds funds.
+    CannotCancelWithFunds       = 11,
+    /// Refunds are no longer permitted for this campaign.
+    RefundWindowClosed          = 12,
+    /// `goal_amount` must be strictly positive.
+    InvalidGoalAmount           = 13,
+    /// `end_time` must be strictly greater than the current ledger timestamp.
+    InvalidEndTime              = 14,
+    /// Milestones must be strictly ascending and the last must equal `goal_amount`.
+    InvalidMilestones           = 15,
+    /// Contract does not hold enough funds to fulfil the requested transfer.
+    InsufficientContractBalance = 16,
     /// A checked arithmetic operation overflowed.
-    ArithmeticOverflow          = 20,
-    /// A storage read returned an unexpectedly negative or invalid value.
-    InvalidStorageValue         = 21,
+    Overflow                    = 17,
+
+    // ── Additional contract errors ─────────────────────────────────────────
+    /// `accepted_assets` must be non-empty.
+    InvalidAssets               = 18,
+    /// `asset_code` must be non-empty and ≤ 12 characters (Stellar limit).
+    InvalidAssetCode            = 19,
+    /// Last milestone `target_amount` does not equal `goal_amount`.
+    MilestoneMismatch           = 20,
+    /// Milestone count must be in the range [1, MAX_MILESTONES].
+    InvalidMilestoneCount       = 21,
+    /// The requested campaign status transition is not permitted.
+    InvalidCampaignTransition   = 22,
+    /// The requested milestone status transition is not permitted.
+    InvalidMilestoneTransition  = 23,
+    /// Cannot transition to `GoalReached` — raised amount < goal.
+    GoalNotReached              = 24,
+
+    /// A storage read returned an unexpectedly invalid value.
+    InvalidStorageValue         = 25,
     /// A storage write failed (entry too large, quota exceeded, etc.).
-    StorageWriteError           = 22,
+    StorageWriteError           = 26,
 
     // ── Asset / transfer ───────────────────────────────────────────────── 3x
     /// Recipient address is the contract itself — would lock funds permanently.
@@ -69,19 +77,17 @@ pub enum Error {
     /// Computed release amount is zero after proportional rounding.
     ZeroReleaseAmount           = 32,
     /// Release amount exceeds the contract's actual token balance.
-    InsufficientContractBalance = 33,
+    InsufficientContractBalance = 16,
     /// `released_amount` already equals `target_amount`; nothing left to release.
-    NothingToRelease            = 34,
+    NothingToRelease            = 33,
     /// `released_amount` would exceed `target_amount` after this operation.
-    MilestoneReleasedExceedsTarget = 35,
+    MilestoneReleasedExceedsTarget = 34,
 
     // ── Milestone ──────────────────────────────────────────────────────── 4x
-    /// Milestone index is out of range for this campaign.
-    MilestoneNotFound           = 40,
     /// Milestone is already in the `Released` state.
-    MilestoneAlreadyReleased    = 41,
+    MilestoneAlreadyReleased    = 40,
     /// All milestones must be Released before the campaign can be concluded.
-    UnreleasedMilestonesExist   = 42,
+    UnreleasedMilestonesExist   = 41,
 
     // ── Refunds ────────────────────────────────────────────────────────── 5x
     /// Refunds are only permitted when the campaign is `Cancelled` or
@@ -96,12 +102,11 @@ pub enum Error {
     /// A re-entrant call was detected; operation aborted.
     ReentrantCall               = 60,
 
-    // ── Amount validation ──────────────────────────────────────────────── 7x
+    // ── Amount validation ───────────────────────────────────────────────────────── 7x
     /// A generic negative or otherwise invalid amount was supplied.
     InvalidAmount               = 70,
-    /// Donation is below the campaign's `min_donation_amount` threshold.
-    DonationBelowMinimum        = 71,
 }
+
 
 // ─── Campaign lifecycle ───────────────────────────────────────────────────────
 
@@ -329,7 +334,10 @@ impl CampaignData {
 
     /// Returns the remaining amount needed to reach the goal, clamped to 0.
     pub fn remaining(&self) -> i128 {
-        (self.goal_amount - self.raised_amount).max(0)
+        self.goal_amount
+            .checked_sub(self.raised_amount)
+            .unwrap_or(0)
+            .max(0)
     }
 
     /// Returns `true` when the campaign can accept a donation right now.
@@ -375,7 +383,10 @@ impl MilestoneData {
     /// Returns the net release amount for this milestone: the portion of
     /// `target_amount` that has not yet been released.
     pub fn pending_release(&self) -> i128 {
-        (self.target_amount - self.released_amount).max(0)
+        self.target_amount
+            .checked_sub(self.released_amount)
+            .unwrap_or(0)
+            .max(0)
     }
 
     /// Returns `true` when all funds for this milestone have been released.
@@ -491,63 +502,4 @@ pub struct RefundProcessedEvent {
     pub ledger: u32,
 }
 
-use soroban_sdk::contracttype;
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[contracttype]
-pub enum CampaignStatus {
-    Active,
-    Successful,
-    Failed,
-    Cancelled,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[contracttype]
-pub struct CampaignStatusResponse {
-    pub status: CampaignStatus,
-    pub days_remaining: i64,
-}
-
-pub struct Campaign {
-    pub creator: Address,
-    pub goal_amount: i128,
-    pub raised_amount: i128,
-    pub deadline: u64,
-}
-
-#[derive(Clone)]
-#[contracttype]
-pub struct Campaign {
-    pub creator: Address,
-
-    pub goal_amount: i128,
-
-    pub raised_amount: i128,
-
-    pub deadline: u64,
-
-    pub original_deadline: u64,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[contracttype]
-pub enum CampaignStatus {
-    Active,
-    GoalReached,
-    Successful,
-    Failed,
-    Cancelled,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[contracttype]
-pub enum CampaignStatus {
-    Active,
-    GoalReached,
-    Ended,
-    Successful,
-    Failed,
-    Cancelled,
-}
 

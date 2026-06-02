@@ -150,7 +150,7 @@ pub fn storage_increment_total_raised(env: &Env, delta: i128) -> i128 {
     let current = storage_get_total_raised(env);
     let new_total = current
         .checked_add(delta)
-        .unwrap_or_else(|| panic_with_error!(env, Error::ArithmeticOverflow));
+        .unwrap_or_else(|| panic_with_error!(env, Error::Overflow));
     storage_set_total_raised(env, new_total);
     new_total
 }
@@ -192,7 +192,7 @@ pub fn storage_increment_asset_raised(env: &Env, token: &Address, delta: i128) -
     let current = storage_get_asset_raised(env, token);
     let new_total = current
         .checked_add(delta)
-        .unwrap_or_else(|| panic_with_error!(env, Error::ArithmeticOverflow));
+        .unwrap_or_else(|| panic_with_error!(env, Error::Overflow));
     storage_set_asset_raised(env, token, new_total);
     new_total
 }

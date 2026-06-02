@@ -117,7 +117,7 @@ pub fn release_milestone_multi_asset(
     milestone.released_amount = milestone
         .released_amount
         .checked_add(milestone_release)
-        .unwrap_or_else(|| panic_with_error!(env, Error::ArithmeticOverflow));
+        .unwrap_or_else(|| panic_with_error!(env, Error::Overflow));
     milestone.status = MilestoneStatus::Released;
     set_milestone(env, milestone_index, &milestone);
 
@@ -185,7 +185,7 @@ pub fn release_milestone_multi_asset(
 
         total_released = total_released
             .checked_add(clamped_release)
-            .unwrap_or_else(|| panic_with_error!(env, Error::ArithmeticOverflow));
+            .unwrap_or_else(|| panic_with_error!(env, Error::Overflow));
         assets_released += 1;
     }
 
