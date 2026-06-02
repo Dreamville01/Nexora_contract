@@ -6,7 +6,7 @@ pub mod types;
 
 use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 use types::{CampaignData, CampaignInitializedEvent, CampaignStatus, DonorRecord, Error, MilestoneData, MilestoneStatus, StellarAsset, AssetInfo};
-use storage::{get_campaign, set_campaign, get_milestone, set_milestone, get_donor, set_donor, get_total_raised as storage_get_total_raised, set_total_raised, increment_donor_asset_donation, get_donor_asset_donation};
+use storage::{get_campaign, set_campaign, get_milestone, set_milestone, get_donor, set_donor, get_total_raised as storage_get_total_raised, storage_set_total_raised, increment_donor_asset_donation, get_donor_asset_donation};
 
 pub const VERSION: u32 = 1;
 
@@ -80,6 +80,9 @@ impl CampaignContract {
             accepted_assets: accepted_assets.clone(),
             milestone_count,
             min_donation_amount,
+            created_at_ledger: env.ledger().sequence(),
+            created_at_time: env.ledger().timestamp(),
+            concluded_at_ledger: None,
         };
 
         set_campaign(&env, &campaign);
@@ -96,6 +99,7 @@ impl CampaignContract {
                 end_time,
                 asset_count: accepted_assets.len() as u32,
                 milestone_count,
+                created_at_ledger: env.ledger().sequence(),
             },
         );
 
@@ -149,7 +153,7 @@ impl CampaignContract {
         let new_total = storage_get_total_raised(&env)
             .checked_add(amount)
             .unwrap_or_else(|| panic_with_error(&env, Error::Overflow));
-        set_total_raised(&env, new_total);
+        storage_set_total_raised(&env, new_total);
 
         // Track per-asset donation for pro-rata refund calculation
         let asset_address = get_token_address_for_asset(&env, &asset, &campaign);
@@ -161,13 +165,18 @@ impl CampaignContract {
             total_donated: 0,
             asset: asset.clone(),
             last_donation_time: 0,
+            last_donation_ledger: 0,
+            donation_count: 0,
+            refund_claimed: false,
         });
         donor_record.total_donated = donor_record
             .total_donated
             .checked_add(amount)
             .unwrap_or_else(|| panic_with_error(&env, Error::Overflow));
-        donor_record.asset = asset;
+        donor_record.asset = asset.clone();
         donor_record.last_donation_time = env.ledger().timestamp();
+        donor_record.last_donation_ledger = env.ledger().sequence();
+        donor_record.donation_count = donor_record.donation_count.saturating_add(1);
         set_donor(&env, &donor, &donor_record);
 
         // Issue #195 – milestone unlock check
@@ -470,9 +479,10 @@ fn validate_milestones(
 #[cfg(test)]
 mod test {
     pub mod refund_eligibility_tests;
+    pub mod claim_refund_tests;
+    pub mod integration_tests;
 }
 
-    Ok(())
 /// Resolves the asset code string for an AssetInfo.
 /// For Native XLM returns "XLM"; for Stellar(addr) looks up the code in accepted_assets.
 fn resolve_asset_code(env: &Env, asset: &AssetInfo, campaign: &CampaignData) -> String {

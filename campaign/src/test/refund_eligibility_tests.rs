@@ -4,7 +4,7 @@ use soroban_sdk::testutils::Address as AddressTestUtils;
 use soroban_sdk::{Address, Env};
 
 use crate::types::{CampaignStatus, CampaignData, DonorRecord, AssetInfo, StellarAsset, MilestoneStatus};
-use crate::storage::{set_campaign, set_donor, get_milestone, set_milestone};
+use crate::storage::{set_campaign, set_donor, set_milestone};
 use crate::CampaignContract;
 
 /// Helper to create a test milestone

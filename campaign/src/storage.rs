@@ -110,9 +110,17 @@ pub fn get_donor(env: &Env, donor: &Address) -> Option<DonorRecord> {
 /// Load a donor record or return a zeroed `DonorRecord`.
 /// Convenience wrapper — avoids `unwrap_or_default()` scattered across callers.
 pub fn get_donor_or_default(env: &Env, donor: &Address) -> DonorRecord {
-    get_donor(env, donor).unwrap_or(DonorRecord {
-        total_donated: 0,
-        last_donation_ledger: 0,
+    get_donor(env, donor).unwrap_or_else(|| {
+        // Return a zeroed DonorRecord — caller should update the relevant fields
+        DonorRecord {
+            donor: donor.clone(),
+            total_donated: 0,
+            asset: crate::types::AssetInfo::Native,
+            last_donation_time: 0,
+            last_donation_ledger: 0,
+            donation_count: 0,
+            refund_claimed: false,
+        }
     })
 }
 
@@ -142,7 +150,7 @@ pub fn increment_donor_asset_donation(env: &Env, donor: &Address, asset: &Addres
         .unwrap_or(0);
     
     let new_amount = current.checked_add(amount)
-        .unwrap_or_else(|| panic_with_error!(env, Error::ArithmeticOverflow));
+        .unwrap_or_else(|| panic_with_error!(env, Error::Overflow));
     
     env.storage().persistent().set(&key, &new_amount);
     bump_persistent(env, &key);
