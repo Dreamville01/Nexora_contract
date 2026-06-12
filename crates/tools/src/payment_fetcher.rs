@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 /// A parsed incoming payment from the Stellar Horizon API.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IncomingPayment {
     pub transaction_hash: String,
     pub from: String,
@@ -25,6 +25,7 @@ pub fn parse_payment(record: &HashMap<&str, &str>) -> Option<IncomingPayment> {
 }
 
 /// Filters a slice of payments, keeping only those directed to `account`.
+#[must_use]
 pub fn filter_by_recipient<'a>(
     payments: &'a [IncomingPayment],
     account: &str,
