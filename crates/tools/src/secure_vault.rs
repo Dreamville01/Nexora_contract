@@ -1,3 +1,8 @@
+//! Secure vault for admin and issuing key management.
+//!
+//! Reads keys from environment variables, validates them for testnet/mainnet,
+//! masks secrets for safe display, and saves/loads vault configuration files.
+
 use anyhow::{Context, Result};
 use std::env;
 use std::fs;
