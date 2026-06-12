@@ -15,10 +15,11 @@ use crate::views::{get_milestone_by_index, MilestoneView};
 ///
 /// No authentication required (read-only view).
 ///
-/// Panics:
+/// # Panics
 ///   `Error::NotInitialized`    — contract not yet initialised.
 ///   `Error::MilestoneNotFound` — `index` ≥ `milestone_count`, or the entry
 ///                                is absent from storage (corrupted state).
+#[must_use]
 pub fn get_milestone_view(env: &Env, index: u32) -> MilestoneData {
     let campaign = get_campaign_or_panic(env);
 
@@ -41,10 +42,11 @@ pub fn get_milestone_view(env: &Env, index: u32) -> MilestoneData {
 ///
 /// No authentication required (read-only view).
 ///
-/// Panics:
+/// # Panics
 ///   `Error::NotInitialized`    — contract not yet initialised.
 ///   `Error::MilestoneNotFound` — `index` ≥ `milestone_count` or missing
 ///                                from storage.
+#[must_use]
 pub fn get_milestone_view_enriched(env: &Env, index: u32) -> MilestoneView {
     get_milestone_by_index(env, index)
 }
