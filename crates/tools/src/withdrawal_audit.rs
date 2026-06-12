@@ -40,6 +40,7 @@ pub struct WithdrawalAuditLog {
 }
 
 impl WithdrawalAuditLog {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
