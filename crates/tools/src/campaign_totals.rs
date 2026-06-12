@@ -15,6 +15,7 @@ impl CampaignTotals {
     }
 
     /// Adds `amount` to the running total for `campaign_id` + `asset` and returns the new total.
+    #[must_use]
     pub fn increment(&mut self, campaign_id: u64, asset: &str, amount: i128) -> i128 {
         let entry = self.asset_totals.entry((campaign_id, asset.to_string())).or_insert(0);
         *entry += amount;
@@ -22,11 +23,13 @@ impl CampaignTotals {
     }
 
     /// Returns the total for a specific `campaign_id` + `asset`, or 0 if none recorded.
+    #[must_use]
     pub fn get(&self, campaign_id: u64, asset: &str) -> i128 {
         *self.asset_totals.get(&(campaign_id, asset.to_string())).unwrap_or(&0)
     }
 
     /// Returns all asset totals for a campaign as a map of asset → total.
+    #[must_use]
     pub fn get_all_assets(&self, campaign_id: u64) -> HashMap<String, i128> {
         self.asset_totals
             .iter()
@@ -36,6 +39,7 @@ impl CampaignTotals {
     }
 
     /// Returns the aggregate total across all assets for a campaign.
+    #[must_use]
     pub fn get_campaign_total(&self, campaign_id: u64) -> i128 {
         self.asset_totals
             .iter()
