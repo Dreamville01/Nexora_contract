@@ -4,6 +4,9 @@ use std::time::Duration;
 /// Calls `op` up to `max_attempts` times, doubling the delay after each failure.
 ///
 /// Returns `Ok(T)` on the first success, or the last `Err` if all attempts fail.
+///
+/// # Panics
+/// Panics if `max_attempts` is 0.
 #[must_use]
 pub fn with_retry<T, E, F>(max_attempts: u32, initial_delay: Duration, mut op: F) -> Result<T, E>
 where
