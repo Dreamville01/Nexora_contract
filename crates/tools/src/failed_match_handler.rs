@@ -1,3 +1,8 @@
+//! Handler for payments that cannot be matched to a campaign.
+//!
+//! Tracks retry counts, enforces a max-retry limit, and logs unmatched
+//! transactions for manual review.
+
 /// Represents a payment transaction that could not be matched to a campaign.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnmatchedPayment {
