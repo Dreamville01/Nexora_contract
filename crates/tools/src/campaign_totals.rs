@@ -3,7 +3,7 @@ use std::collections::HashMap;
 /// In-memory store for per-campaign donation totals, grouped by asset.
 ///
 /// Issue #141 – Track Total Volume by Asset
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub struct CampaignTotals {
     /// (campaign_id, asset) → total
     asset_totals: HashMap<(u64, String), i128>,
