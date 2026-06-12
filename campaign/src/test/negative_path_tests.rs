@@ -1,3 +1,8 @@
+//! Negative-path tests: invalid inputs, state violations, and edge cases.
+//!
+//! Exercises every `should_panic` path in initialize, donate, refund, end,
+//! cancel, extend_deadline, and milestones — plus boundary and auth tests.
+
 #![cfg(test)]
 
 use soroban_sdk::testutils::Address as AddressTestUtils;
