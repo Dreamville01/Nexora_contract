@@ -31,6 +31,7 @@ pub struct MilestoneView {
 
 /// Find the index of the first milestone that is not yet released.
 /// Returns `milestone_count` if all milestones are released.
+#[must_use]
 pub fn find_next_pending_index(env: &Env) -> u32 {
     let campaign = get_campaign(env)
         .unwrap_or_else(|| panic_with_error!(env, Error::NotInitialized));
