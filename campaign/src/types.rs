@@ -259,12 +259,14 @@ pub struct StellarAsset {
 
 impl StellarAsset {
     /// Returns `true` when this represents native XLM (no issuer).
+    #[must_use]
     pub fn is_xlm(&self) -> bool {
         self.issuer.is_none()
     }
 
     /// Returns `true` when the asset code is non-empty and ≤ 12 bytes.
     /// Does not validate the character set — do that at the call site.
+    #[must_use]
     pub fn has_valid_code(&self) -> bool {
         let len = self.asset_code.len();
         len > 0 && len <= 12
@@ -350,6 +352,7 @@ impl CampaignData {
 
     /// Returns `true` when the campaign can accept a donation right now.
     /// Call-site must also check `env.ledger().timestamp() < self.end_time`.
+    #[must_use]
     pub fn is_accepting_donations(&self) -> bool {
         self.status.accepts_donations()
     }
