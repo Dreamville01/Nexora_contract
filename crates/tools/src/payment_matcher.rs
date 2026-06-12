@@ -9,6 +9,7 @@ pub fn campaign_id_from_memo(memo: &str) -> Option<u64> {
 
 /// Returns true when the payment memo matches the expected campaign.
 #[must_use]
+#[inline]
 pub fn matches_campaign(memo: &str, campaign_id: u64) -> bool {
     campaign_id_from_memo(memo) == Some(campaign_id)
 }
