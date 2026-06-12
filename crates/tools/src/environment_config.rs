@@ -21,6 +21,27 @@ pub struct EnvironmentConfig {
 }
 
 impl EnvironmentConfig {
+    #[must_use]
+    pub fn default_for_testnet() -> Self {
+        Self {
+            network: "testnet".to_string(),
+            testnet: NetworkConfig {
+                name: "testnet".to_string(),
+                rpc_url: "https://soroban-testnet.stellar.org:443".to_string(),
+                horizon_url: "https://horizon-testnet.stellar.org".to_string(),
+                network_passphrase: "Test SDF Network ; September 2015".to_string(),
+            },
+            mainnet: NetworkConfig {
+                name: "mainnet".to_string(),
+                rpc_url: "https://soroban-rpc.mainnet.stellar.gateway.fm".to_string(),
+                horizon_url: "https://horizon.stellar.org".to_string(),
+                network_passphrase: "Public Global Stellar Network ; September 2015".to_string(),
+            },
+            admin_public_key: None,
+            issuing_public_key: None,
+        }
+    }
+
     pub fn from_env() -> Result<Self> {
         dotenv::dotenv().ok();
 
@@ -58,6 +79,7 @@ impl EnvironmentConfig {
         })
     }
 
+    #[must_use]
     pub fn get_active_network(&self) -> Result<NetworkConfig> {
         match self.network.as_str() {
             "testnet" => Ok(self.testnet.clone()),
