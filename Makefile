@@ -8,13 +8,13 @@ build: build-wasm build-tools
 # Build WASM contract
 build-wasm:
 	@echo "🔨 Building Soroban contract..."
-	cargo build -p stellaraid-core --target wasm32-unknown-unknown --release
+	cargo build -p orbitchain-core --target wasm32-unknown-unknown --release
 	@echo "✅ WASM contract built successfully"
 
 # Build CLI tools
 build-tools:
 	@echo "🔨 Building CLI tools..."
-	cargo build -p stellaraid-tools
+	cargo build -p orbitchain-tools
 	@echo "✅ CLI tools built successfully"
 
 # Run tests

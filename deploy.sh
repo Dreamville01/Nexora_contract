@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# deploy.sh - Deploy StellarAid core contract and store the contract ID
+# deploy.sh - Deploy OrbitChain core contract and store the contract ID
 # Closes #96
 
 set -euo pipefail
 
 NETWORK="${SOROBAN_NETWORK:-testnet}"
-WASM_PATH="target/wasm32-unknown-unknown/release/stellaraid_core.wasm"
-CONTRACT_ID_FILE=".stellaraid_contract_id"
+WASM_PATH="target/wasm32-unknown-unknown/release/orbitchain_core.wasm"
+CONTRACT_ID_FILE=".orbitchain_contract_id"
 
 echo "🔨 Building contract for network: $NETWORK"
-cargo build -p stellaraid-core --target wasm32-unknown-unknown --release
+cargo build -p orbitchain-core --target wasm32-unknown-unknown --release
 
 if [ ! -f "$WASM_PATH" ]; then
   echo "❌ WASM file not found at $WASM_PATH"
