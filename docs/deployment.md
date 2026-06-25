@@ -68,6 +68,72 @@ campaign reports meaningless while still allowing long-running campaigns.
 
 ---
 
+## Withdrawal Audit Log
+
+> Issue [#38](https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/38)
+
+The off-chain withdrawal audit log
+(`crates/tools/src/withdrawal_audit.rs`, `WithdrawalAuditLog`) is the primary
+**non-blockchain** record of admin actions on creator withdrawals. It keeps an
+in-memory buffer for fast reads and a durable append-only on-disk sink so the
+trail survives process crashes, restarts, and container eviction.
+
+### On-disk schema
+
+Entries are stored as [JSON Lines](https://jsonlines.org/) — one JSON object
+per line, append-only. Each line is an independently parseable
+`WithdrawalLogEntry`:
+
+| Field             | Type            | Notes                                                                 |
+| ----------------- | --------------- | --------------------------------------------------------------------- |
+| `campaign_id`     | `u64`           | Campaign the withdrawal belongs to.                                   |
+| `recipient`       | `string`        | Creator address (`G...`).                                             |
+| `amount`          | `i128`          | Base units; matches the on-chain `WithdrawalRequest.amount`.          |
+| `action`          | `string` (enum) | `requested` \| `approved` \| `submitted` \| `rejected` (snake_case).  |
+| `actor`           | `string`        | Admin/creator/operator that performed the action.                    |
+| `timestamp`       | `i64`           | Audit clock (Unix seconds) from the injectable `Clock`.              |
+| `ledger_timestamp`| `u64?`          | On-chain Soroban event time, when known (omitted if absent).         |
+| `tx_hash`         | `string?`       | Soroban transaction hash for the on-chain event (omitted if absent). |
+
+Example line:
+
+```json
+{"campaign_id":5,"recipient":"GA...","amount":100,"action":"approved","actor":"GADMIN","timestamp":1700000000,"ledger_timestamp":8}
+```
+
+Persistence guarantees: the file is opened with `O_APPEND | O_CREAT` (never
+truncated), each flush writes all pending entries in a single `write_all`
+followed by `fsync` (`sync_all`), and on Unix the file is `chmod 0o600`
+(owner-only). `flush_to_disk` is incremental — only entries logged since the
+previous successful flush are appended, so periodic flushes never duplicate
+lines. On startup, call `WithdrawalAuditLog::load_from_disk` to replay existing
+history before logging more (the flush cursor is positioned past all loaded
+entries, so the next flush appends rather than re-writes).
+
+### Log rotation policy
+
+- **File naming**: rotate by UTC day — `audit-YYYY-MM-DD.jsonl`. Operators
+  point `flush_to_disk` at the current day's file.
+- **Permissions**: every rotated file is `0o600`; the containing directory
+  should be `0o700` and owned by the service account.
+- **Retention**: keep at least 365 days of audit files for compliance; archive
+  (do not delete) older files to cold storage. Because the format is plain
+  JSON Lines, files compress well (`gzip`) once a day is closed.
+- **Integrity**: files are append-only and never rewritten in place, so an
+  out-of-band checksum/anchor of each closed day's file is sufficient for
+  tamper-evidence.
+- **Timestamps**: production uses `SystemClock` (`chrono::Utc::now()` via the
+  `Clock` trait default). Carry `ledger_timestamp` alongside each entry so the
+  off-chain audit clock can be cross-checked against on-chain ledger time.
+
+> **Scope note:** a background flusher driven by a long-running worker loop is
+> not yet wired — `crates/tools` is currently a synchronous CLI with no
+> off-chain withdrawal-event pipeline. Callers flush explicitly. Wiring a
+> periodic flusher (and a durable multi-host store such as SQLite/Postgres) is
+> tracked as follow-up work in #38.
+
+---
+
 ## Known Limitations / CLI Status
 
 The `orbitchain-cli` binary (`crates/tools`) is in active development. Several
