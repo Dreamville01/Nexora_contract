@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/deploy.sh — Deploy OrbitChain core contract to a Soroban network.
+# scripts/deploy.sh — Deploy Nexora core contract to a Soroban network.
 #
 # Usage:
 #   bash scripts/deploy.sh [testnet|sandbox|mainnet]
@@ -44,8 +44,8 @@ case "$NETWORK" in
 esac
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-WASM_PATH="target/wasm32v1-none/release/orbitchain_core.wasm"
-OPTIMIZED_WASM_PATH="target/wasm32v1-none/release/orbitchain_core.wasm"
+WASM_PATH="target/wasm32v1-none/release/nexora_core.wasm"
+OPTIMIZED_WASM_PATH="target/wasm32v1-none/release/nexora_core.wasm"
 DEPLOYMENTS_DIR="deployments"
 DEPLOYMENT_FILE="${DEPLOYMENTS_DIR}/${NETWORK}.json"
 
@@ -106,5 +106,5 @@ EOF
 echo "💾 Deployment record saved to $DEPLOYMENT_FILE"
 
 # Also write the plain contract-ID file for backward compatibility
-echo "$CONTRACT_ID" > .orbitchain_contract_id
-echo "✅ Contract ID stored in .orbitchain_contract_id"
+echo "$CONTRACT_ID" > .nexora_contract_id
+echo "✅ Contract ID stored in .nexora_contract_id"

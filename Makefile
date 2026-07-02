@@ -1,4 +1,4 @@
-## OrbitChain Makefile
+## Nexora Makefile
 ##   make build        - Compile contracts
 ##   make test         - Run all tests
 ##   make audit        - Run cargo audit
@@ -16,13 +16,13 @@ build: build-wasm build-tools
 # Build WASM contract
 build-wasm:
 	@echo "🔨 Building Soroban contract..."
-	cargo build -p orbitchain-core -p orbitchain-campaign -p orbitchain-token-bridge -p orbitchain-common --target wasm32v1-none --release
+	cargo build -p nexora-core -p nexora-campaign -p nexora-token-bridge -p nexora-common --target wasm32v1-none --release
 	@echo "✅ WASM contracts built successfully"
 
 # Build CLI tools
 build-tools:
 	@echo "🔨 Building CLI tools..."
-	cargo build -p orbitchain-tools
+	cargo build -p nexora-tools
 	@echo "✅ CLI tools built successfully"
 
 # Run tests

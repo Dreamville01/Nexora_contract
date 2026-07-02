@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# OrbitChain deploy script — build and deploy Soroban contracts
+# Nexora deploy script — build and deploy Soroban contracts
 #
 # Usage:   ./deploy.sh [--wasm]   (wasm-only)  |  ./deploy.sh  (full deploy)
 #          NETWORK=testnet ./deploy.sh          (override network)
 #
 # Prerequisites: soroban-cli, cargo, rustup target add wasm32-unknown-unknown
-# deploy.sh — Deploy OrbitChain core contract and store the contract ID.
+# deploy.sh — Deploy Nexora core contract and store the contract ID.
 #
 # Usage: bash deploy.sh
 #
@@ -18,11 +18,11 @@
 set -euo pipefail
 
 NETWORK="${SOROBAN_NETWORK:-testnet}"
-WASM_PATH="target/wasm32-unknown-unknown/release/orbitchain_core.wasm"
-CONTRACT_ID_FILE=".orbitchain_contract_id"
+WASM_PATH="target/wasm32-unknown-unknown/release/nexora_core.wasm"
+CONTRACT_ID_FILE=".nexora_contract_id"
 
 echo "🔨 Building contract for network: $NETWORK"
-cargo build -p orbitchain-core --target wasm32-unknown-unknown --release
+cargo build -p nexora-core --target wasm32-unknown-unknown --release
 
 if [ ! -f "$WASM_PATH" ]; then
   echo "❌ WASM file not found at $WASM_PATH"
