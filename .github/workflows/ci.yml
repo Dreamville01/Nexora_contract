@@ -23,10 +23,10 @@ env:
   # is intentionally excluded — it is a native CLI binary, not a contract, and
   # has its own dev-tooling lint/test debt tracked separately.
   CONTRACTS: >-
-    -p orbitchain-campaign
-    -p orbitchain-common
-    -p orbitchain-core
-    -p orbitchain-token-bridge
+    -p nexora-campaign
+    -p nexora-common
+    -p nexora-core
+    -p nexora-token-bridge
 
 jobs:
   fmt:
