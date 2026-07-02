@@ -70,7 +70,7 @@ campaign reports meaningless while still allowing long-running campaigns.
 
 ## Withdrawal Audit Log
 
-> Issue [#38](https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/38)
+> Issue [#38](https://github.com/Dreamville01/Nexora_contract/issues/38)
 
 The off-chain withdrawal audit log
 (`crates/tools/src/withdrawal_audit.rs`, `WithdrawalAuditLog`) is the primary
@@ -136,44 +136,44 @@ entries, so the next flush appends rather than re-writes).
 
 ## Known Limitations / CLI Status
 
-The `orbitchain-cli` binary (`crates/tools`) is in active development. Several
+The `nexora-cli` binary (`crates/tools`) is in active development. Several
 commands documented in earlier README revisions are **not yet implemented** in
 the binary. This page is the canonical status table for every command name
 that has ever appeared in user-facing documentation; it is the source of
 truth that both the README and `crates/tools/src/main.rs`'s `help` output link
-to. Tracker: [issue #37](https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37).
+to. Tracker: [issue #37](https://github.com/Dreamville01/Nexora_contract/issues/37).
 
 ### Status of every documented command
 
 | Command documented in README | Status | Where it actually lives | Action |
 |---|---|---|---|
-| `orbitchain-cli config` | ✅ Implemented | `handle_config` in `crates/tools/src/main.rs` | Use as-is |
-| `orbitchain-cli network` | ✅ Implemented | `handle_network` | Use as-is |
-| `orbitchain-cli vault` | ✅ Implemented | `handle_vault` | Use as-is |
-| `orbitchain-cli toggle <net>` | ✅ Implemented | `handle_toggle` | Use as-is |
-| `orbitchain-cli asset …` | ✅ Implemented | `handle_asset` (5 sub-commands) | Use as-is |
-| `orbitchain-cli keymanager …` | ✅ Implemented | `handle_keymanager` (6 sub-commands) | Use as-is |
-| `orbitchain-cli keypair …` | ✅ Implemented | `handle_keypair` (7 sub-commands) | Use as-is |
-| `orbitchain-cli signing …` | ✅ Implemented | `handle_signing` (5 sub-commands) | Use as-is |
-| `orbitchain-cli response …` | ✅ Implemented | `handle_response` (5 sub-commands) | Use as-is |
-| `orbitchain-cli deploy` | ⚠️ **Stub** | `handle_deploy` prints an "NOT yet implemented" banner | Use `make deploy-testnet` or `bash scripts/deploy.sh testnet` |
-| `orbitchain-cli invoke <method>` | ⚠️ **Stub** | `handle_invoke` prints an "NOT yet implemented" banner | Use `stellar contract invoke --id $CONTRACT_ID --source <KEY> --network testnet -- <method> [args…]` |
-| `orbitchain-cli account` | ⚠️ **Stub** | `handle_account` prints an "NOT yet implemented" banner | Use `orbitchain-cli keypair generate-master` (creation) or `keypair fund` (testnet funding) |
-| `orbitchain-cli account create` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `orbitchain-cli keypair generate-master` |
-| `orbitchain-cli account fund` | ❌ **Missing** (under `account` namespace) | Implemented under `keypair fund` | Use `orbitchain-cli keypair fund <account> <amount_xlm>` |
-| `orbitchain-cli config init` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Run `cp .env.example .env` and edit it manually |
-| `orbitchain-cli config check` | ❌ **Missing** (subcommand) | top-level `config` prints + validates everything already | Use `orbitchain-cli config` |
-| `orbitchain-cli contract-id` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `cat .orbitchain_contract_id` or `cat deployments/<network>.json` |
-| `orbitchain-cli tx-history` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Track in #37 |
-| `orbitchain-cli batch` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Track in #37 |
-| `orbitchain-cli debug` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Track in #37 |
-| `orbitchain-cli contract query` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `stellar contract invoke --simulate …` natively |
-| `orbitchain-cli build-donation-tx` | ❌ **Missing** (top-level alias) | Implemented as `signing build-donation` | Use `orbitchain-cli signing build-donation …` |
-| `orbitchain-cli submit-tx` | ❌ **Missing** (top-level alias) | Implemented as `response submit` (placeholder) | Use `response submit <file>` (placeholder) or `stellar contract invoke` natively |
-| `orbitchain-cli verify-tx` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use Horizon / Soroban RPC events directly |
-| `orbitchain-cli prepare-wallet-signing` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `signing build-donation` (donation), `signing build-campaign` (creation) or `signing build-custom` (wrap XDR) |
-| `orbitchain-cli complete-wallet-signing` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `response process` (parse) or `response save` (persist) |
-| `orbitchain-cli response submit` | ⚠️ **Placeholder** | `handle_response → "submit"` prints a planned flow but does not submit | Use `stellar contract invoke` natively for now |
+| `nexora-cli config` | ✅ Implemented | `handle_config` in `crates/tools/src/main.rs` | Use as-is |
+| `nexora-cli network` | ✅ Implemented | `handle_network` | Use as-is |
+| `nexora-cli vault` | ✅ Implemented | `handle_vault` | Use as-is |
+| `nexora-cli toggle <net>` | ✅ Implemented | `handle_toggle` | Use as-is |
+| `nexora-cli asset …` | ✅ Implemented | `handle_asset` (5 sub-commands) | Use as-is |
+| `nexora-cli keymanager …` | ✅ Implemented | `handle_keymanager` (6 sub-commands) | Use as-is |
+| `nexora-cli keypair …` | ✅ Implemented | `handle_keypair` (7 sub-commands) | Use as-is |
+| `nexora-cli signing …` | ✅ Implemented | `handle_signing` (5 sub-commands) | Use as-is |
+| `nexora-cli response …` | ✅ Implemented | `handle_response` (5 sub-commands) | Use as-is |
+| `nexora-cli deploy` | ⚠️ **Stub** | `handle_deploy` prints an "NOT yet implemented" banner | Use `make deploy-testnet` or `bash scripts/deploy.sh testnet` |
+| `nexora-cli invoke <method>` | ⚠️ **Stub** | `handle_invoke` prints an "NOT yet implemented" banner | Use `stellar contract invoke --id $CONTRACT_ID --source <KEY> --network testnet -- <method> [args…]` |
+| `nexora-cli account` | ⚠️ **Stub** | `handle_account` prints an "NOT yet implemented" banner | Use `nexora-cli keypair generate-master` (creation) or `keypair fund` (testnet funding) |
+| `nexora-cli account create` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `nexora-cli keypair generate-master` |
+| `nexora-cli account fund` | ❌ **Missing** (under `account` namespace) | Implemented under `keypair fund` | Use `nexora-cli keypair fund <account> <amount_xlm>` |
+| `nexora-cli config init` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Run `cp .env.example .env` and edit it manually |
+| `nexora-cli config check` | ❌ **Missing** (subcommand) | top-level `config` prints + validates everything already | Use `nexora-cli config` |
+| `nexora-cli contract-id` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `cat .nexora_contract_id` or `cat deployments/<network>.json` |
+| `nexora-cli tx-history` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Track in #37 |
+| `nexora-cli batch` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Track in #37 |
+| `nexora-cli debug` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Track in #37 |
+| `nexora-cli contract query` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `stellar contract invoke --simulate …` natively |
+| `nexora-cli build-donation-tx` | ❌ **Missing** (top-level alias) | Implemented as `signing build-donation` | Use `nexora-cli signing build-donation …` |
+| `nexora-cli submit-tx` | ❌ **Missing** (top-level alias) | Implemented as `response submit` (placeholder) | Use `response submit <file>` (placeholder) or `stellar contract invoke` natively |
+| `nexora-cli verify-tx` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use Horizon / Soroban RPC events directly |
+| `nexora-cli prepare-wallet-signing` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `signing build-donation` (donation), `signing build-campaign` (creation) or `signing build-custom` (wrap XDR) |
+| `nexora-cli complete-wallet-signing` | ❌ **Missing** | not in the dispatcher → `Unknown command` | Use `response process` (parse) or `response save` (persist) |
+| `nexora-cli response submit` | ⚠️ **Placeholder** | `handle_response → "submit"` prints a planned flow but does not submit | Use `stellar contract invoke` natively for now |
 
 ### What to do if your command is missing
 
@@ -185,12 +185,12 @@ to. Tracker: [issue #37](https://github.com/OrbitChainLabs/OrbitChain-Contracts/
    `scripts/deploy.sh` and `Makefile` (`make deploy-testnet`,
    `make deploy-sandbox`).
 3. If no alternative exists yet, track the gap as part of
-   [issue #37](https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37).
+   [issue #37](https://github.com/Dreamville01/Nexora_contract/issues/37).
 
 ### Prior track reference
 
 This CLI status audit is filed as a follow-up to
-[issue #15](https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/15),
+[issue #15](https://github.com/Dreamville01/Nexora_contract/issues/15),
 which originally triaged the `account create`/`fund` flows against the
 campaign-lifecycle ledger. The current pass (#37) extends that traceability
 across every CLI surface — implemented, stubbed, and missing — so future

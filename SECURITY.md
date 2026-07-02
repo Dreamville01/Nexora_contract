@@ -2,13 +2,13 @@
 
 ## Reporting a Vulnerability
 
-OrbitChain-Contracts contains Soroban smart contracts handling crowdfunding and fund management. Security vulnerabilities can have serious financial consequences. Please report them responsibly.
+Nexora-Contracts contains Soroban smart contracts handling crowdfunding and fund management. Security vulnerabilities can have serious financial consequences. Please report them responsibly.
 
 **Do NOT open a public issue to report a security vulnerability.**
 
 ### How to Report
 
-- **GitHub Private Advisories**: Use [GitHub's private vulnerability reporting](https://github.com/OrbitChainLabs/OrbitChain-Contracts/security/advisories/new)
+- **GitHub Private Advisories**: Use [GitHub's private vulnerability reporting](https://github.com/Dreamville01/Nexora_contract/security/advisories/new)
 - **Email**: Contact the maintainers listed in the repository README
 
 ### What to Include
@@ -37,4 +37,4 @@ High-priority security areas for this project:
 - Reentrancy or state manipulation vulnerabilities
 - Incorrect access control on contract invocations
 
-Thank you for helping keep OrbitChain and its users safe.
+Thank you for helping keep Nexora and its users safe.

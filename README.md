@@ -1,16 +1,16 @@
-# 🌟 OrbitChain
+# 🌟 Nexora
 
-[![CI](https://github.com/orbitchain/orbitchain-contracts/workflows/CI/badge.svg)](https://github.com/orbitchain/orbitchain-contracts/actions)
+[![CI](https://github.com/Dreamville01/Nexora_contract/workflows/CI/badge.svg)](https://github.com/Dreamville01/Nexora_contract/actions)
 
 ## Contract Canonicalization
 
-Decision: **Option B (conservative)** — keep `campaign/` (`orbitchain-campaign`) as the canonical crowdfunding contract for all new development, audits, deployments, and integrations. The `campaign/` implementation remains the authoritative contract for milestone flows, refunds, freeze/upgrade controls, reentrancy protection, typed errors, and dashboard analytics.
+Decision: **Option B (conservative)** — keep `campaign/` (`nexora-campaign`) as the canonical crowdfunding contract for all new development, audits, deployments, and integrations. The `campaign/` implementation remains the authoritative contract for milestone flows, refunds, freeze/upgrade controls, reentrancy protection, typed errors, and dashboard analytics.
 
-`crates/contracts/core/` (`orbitchain-core`) is retained only as a legacy compatibility/reference contract. Do not add new campaign features there; use `campaign/` for any new logic, analytics endpoints, or deployment work. Any remaining behavior worth preserving from `core` should be migrated into `campaign/` before `core` is removed in a future breaking release.
+`crates/contracts/core/` (`nexora-core`) is retained only as a legacy compatibility/reference contract. Do not add new campaign features there; use `campaign/` for any new logic, analytics endpoints, or deployment work. Any remaining behavior worth preserving from `core` should be migrated into `campaign/` before `core` is removed in a future breaking release.
 
-Canonical campaign analytics now live on `orbitchain-campaign`: use `get_campaign_report`, `get_platform_summary`, `get_dashboard_metrics`, `get_donation_count`, `get_donor_count`, `get_release_count`, and `get_total_tx_count` for dashboard and export workflows.
+Canonical campaign analytics now live on `nexora-campaign`: use `get_campaign_report`, `get_platform_summary`, `get_dashboard_metrics`, `get_donation_count`, `get_donor_count`, `get_release_count`, and `get_total_tx_count` for dashboard and export workflows.
 
-**OrbitChain** is an on-chain crowdfunding protocol built on the **Stellar Network** and **Soroban smart contracts**. It provides a transparent, trust-minimized platform where campaign creators can raise funds in native XLM or any Stellar-based asset (USDC, NGNT, custom tokens), and donors retain full visibility into how their contributions are deployed.
+**Nexora** is an on-chain crowdfunding protocol built on the **Stellar Network** and **Soroban smart contracts**. It provides a transparent, trust-minimized platform where campaign creators can raise funds in native XLM or any Stellar-based asset (USDC, NGNT, custom tokens), and donors retain full visibility into how their contributions are deployed.
 
 The protocol is governed by a set of deterministic Soroban contracts — handling campaign lifecycle management, milestone-based fund release, multi-asset donation processing, and cross-chain token bridging — complemented by a comprehensive CLI toolchain for deployment, transaction signing, wallet integration, and network diagnostics.
 
@@ -19,7 +19,7 @@ The protocol is governed by a set of deterministic Soroban contracts — handlin
 This project uses a Rust Cargo workspace with the following structure:
 
 ```
-orbitChain-contract/
+nexora-contract/
 |-- campaign/                  # Canonical campaign contract
 |   |-- Cargo.toml
 |   `-- src/
@@ -41,19 +41,19 @@ orbitChain-contract/
 
 ### Crates Overview
 
-- **`orbitchain-campaign`**: Canonical Soroban crowdfunding contract for milestones, multi-asset donations, refunds, lifecycle controls, and analytics
-- **`orbitchain-core`**: Legacy compatibility/reference contract; do not use for new campaign features
-- **`orbitchain-tools`**: Advanced CLI utilities for contract deployment, configuration, transaction management, and debugging
+- **`nexora-campaign`**: Canonical Soroban crowdfunding contract for milestones, multi-asset donations, refunds, lifecycle controls, and analytics
+- **`nexora-core`**: Legacy compatibility/reference contract; do not use for new campaign features
+- **`nexora-tools`**: Advanced CLI utilities for contract deployment, configuration, transaction management, and debugging
 
 ## 🛠️ Implemented CLI Commands
 
-The `orbitchain-cli` binary (in `crates/tools`) ships with a focused set of
+The `nexora-cli` binary (in `crates/tools`) ships with a focused set of
 sub-commands today. Anything **not** listed below is unimplemented and will
 print either `❌ Unknown command: …` or a stubbed "not yet implemented"
 banner with an issue link. Older documentation referenced several commands
 that do not exist yet; the canonical status table lives in
 [`docs/deployment.md`](docs/deployment.md#known-limitations--cli-status) and
-is tracked in [issue #37](https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37).
+is tracked in [issue #37](https://github.com/Dreamville01/Nexora_contract/issues/37).
 
 ### Configuration & Network
 
@@ -98,23 +98,23 @@ is tracked in [issue #37](https://github.com/OrbitChainLabs/OrbitChain-Contracts
 
 ```bash
 # Inspect active configuration and network
-orbitchain-cli config
-orbitchain-cli network
-orbitchain-cli toggle testnet
+nexora-cli config
+nexora-cli network
+nexora-cli toggle testnet
 
 # Issue a custom asset and establish trustline
-orbitchain-cli asset generate
-orbitchain-cli asset trustline GABJ2... USDC
-orbitchain-cli asset issue GABJ2... 100
+nexora-cli asset generate
+nexora-cli asset trustline GABJ2... USDC
+nexora-cli asset issue GABJ2... 100
 
 # Build a donation signing request for a donor
-orbitchain-cli signing build-donation GBJCHU... 1 5000000 XLM "Supporting education"
+nexora-cli signing build-donation GBJCHU... 1 5000000 XLM "Supporting education"
 
 # Process the wallet's signed response
-orbitchain-cli response process '{"requestId":"req_123","xdr":"AAAA...","signer":"GBJCHU...","signedAt":1234567890}'
+nexora-cli response process '{"requestId":"req_123","xdr":"AAAA...","signer":"GBJCHU...","signedAt":1234567890}'
 ```
 
-For the full command list, run `orbitchain-cli` with no arguments.
+For the full command list, run `nexora-cli` with no arguments.
 
 ## 🛠️ Development Setup
 
@@ -123,8 +123,8 @@ For the full command list, run `orbitchain-cli` with no arguments.
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/orbitchain-contract.git
-   cd orbitchain-contract
+   git clone https://github.com/Dreamville01/Nexora_contract.git
+   cd nexora-contract
    ```
 
 2. **Install Rust toolchain** (automatically configured by `rust-toolchain.toml`)
@@ -157,7 +157,7 @@ For the full command list, run `orbitchain-cli` with no arguments.
    make build
 
    # Or using cargo directly
-   cargo build -p orbitchain-campaign --target wasm32v1-none
+   cargo build -p nexora-campaign --target wasm32v1-none
    ```
 
 ### Prerequisites
@@ -211,10 +211,10 @@ make help
 
 ```bash
 # Build the canonical campaign contract for WASM
-cargo build -p orbitchain-campaign --target wasm32v1-none --release
+cargo build -p nexora-campaign --target wasm32v1-none --release
 
 # Build the CLI tools
-cargo build -p orbitchain-tools
+cargo build -p nexora-tools
 
 # Build entire workspace
 cargo build --workspace
@@ -224,7 +224,7 @@ cargo build --workspace
 
 ```bash
 # Run canonical campaign contract tests
-cargo test -p orbitchain-campaign
+cargo test -p nexora-campaign
 
 # Run all tests
 cargo test --workspace
@@ -240,32 +240,32 @@ cargo test --workspace
 > instead. `config init`, `contract-id`, `build-donation-tx`, `submit-tx`,
 > `verify-tx`, `prepare-wallet-signing`, and `complete-wallet-signing`
 > shown in older docs are **not implemented** — see issue
-> [#37](https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37).
+> [#37](https://github.com/Dreamville01/Nexora_contract/issues/37).
 
 ```bash
 # Inspect resolved configuration / network / vault
-cargo run -p orbitchain-tools -- config
-cargo run -p orbitchain-tools -- network
-cargo run -p orbitchain-tools -- vault
-cargo run -p orbitchain-tools -- toggle testnet
+cargo run -p nexora-tools -- config
+cargo run -p nexora-tools -- network
+cargo run -p nexora-tools -- vault
+cargo run -p nexora-tools -- toggle testnet
 
 # Issue assets via the asset namespace
-cargo run -p orbitchain-tools -- asset config
-cargo run -p orbitchain-tools -- asset generate
-cargo run -p orbitchain-tools -- asset trustline GABJ2... USDC
-cargo run -p orbitchain-tools -- asset issue GABJ2... 100
+cargo run -p nexora-tools -- asset config
+cargo run -p nexora-tools -- asset generate
+cargo run -p nexora-tools -- asset trustline GABJ2... USDC
+cargo run -p nexora-tools -- asset issue GABJ2... 100
 
 # Encrypted vault operations
-cargo run -p orbitchain-tools -- keymanager init-vault "$VAULT_MASTER_PASSWORD"
-cargo run -p orbitchain-tools -- keymanager vault-status
+cargo run -p nexora-tools -- keymanager init-vault "$VAULT_MASTER_PASSWORD"
+cargo run -p nexora-tools -- keymanager vault-status
 
 # Keypair lifecycle (the entry point that replaced `account create|fund`)
-cargo run -p orbitchain-tools -- keypair generate-master
-cargo run -p orbitchain-tools -- keypair fund GABJ2... 10
+cargo run -p nexora-tools -- keypair generate-master
+cargo run -p nexora-tools -- keypair fund GABJ2... 10
 
 # Wallet signing + response
-cargo run -p orbitchain-tools -- signing build-donation GBJCHU... 1 5000000 XLM "Supporting education"
-cargo run -p orbitchain-tools -- response process '{"requestId":"req_123","xdr":"AAAA...","signer":"GBJCHU...","signedAt":1234567890}'
+cargo run -p nexora-tools -- signing build-donation GBJCHU... 1 5000000 XLM "Supporting education"
+cargo run -p nexora-tools -- response process '{"requestId":"req_123","xdr":"AAAA...","signer":"GBJCHU...","signedAt":1234567890}'
 ```
 
 ## 🚀 Quick Start: Deploy Your First Contract
@@ -327,7 +327,7 @@ SOROBAN_ADMIN_KEY=GA7...
 > The in-CLI `deploy` command is a stub today. Use the build-in Makefile
 > target (or `scripts/deploy.sh`) which is wired into `stellar contract deploy`
 > for real network output. Tracking: issue
-> [#37](https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37).
+> [#37](https://github.com/Dreamville01/Nexora_contract/issues/37).
 
 ```bash
 # Deploy via the Makefile wrapper (uses scripts/deploy.sh + stellar-cli)
@@ -339,14 +339,14 @@ bash scripts/deploy.sh testnet
 Expected output:
 
 ```
-ℹ️  Using optimized WASM: target/wasm32v1-none/release/orbitchain_core.wasm
+ℹ️  Using optimized WASM: target/wasm32v1-none/release/nexora_core.wasm
 🚀 Deploying to testnet...
    RPC: https://soroban-testnet.stellar.org:443
-   WASM: target/wasm32v1-none/release/orbitchain_core.wasm
+   WASM: target/wasm32v1-none/release/nexora_core.wasm
 ✅ Contract deployed!
 📝 Contract ID: CB7...ABC
 💾 Deployment record saved to deployments/testnet.json
-✅ Contract ID stored in .orbitchain_contract_id
+✅ Contract ID stored in .nexora_contract_id
 ```
 
 ### Step 4: Invoke the ping Method
@@ -356,7 +356,7 @@ Expected output:
 
 ```bash
 # Read the contract ID that Step 3 wrote out
-CONTRACT_ID=$(cat .orbitchain_contract_id)
+CONTRACT_ID=$(cat .nexora_contract_id)
 
 # Invoke a contract method (replace `version` with any contract method such as `ping`)
 stellar contract invoke \
@@ -379,13 +379,13 @@ Expected output:
 
 ```bash
 # View the deployed contract ID written by scripts/deploy.sh
-cat .orbitchain_contract_id
+cat .nexora_contract_id
 
 # View the per-network deployment record
 cat deployments/testnet.json
 
 # View active network configuration
-cargo run -p orbitchain-tools -- network
+cargo run -p nexora-tools -- network
 ```
 
 ### Using Sandbox (Local Development)
@@ -400,7 +400,7 @@ make sandbox-start
 make deploy-sandbox
 
 # Invoke on sandbox natively
-CONTRACT_ID=$(cat .orbitchain_contract_id)
+CONTRACT_ID=$(cat .nexora_contract_id)
 stellar contract invoke \
   --id "$CONTRACT_ID" \
   --source test_account \
@@ -412,14 +412,14 @@ stellar contract invoke \
 ### Troubleshooting
 
 - **"WASM file not found"**: Run `make build-wasm` to build the contracts first.
-- **"Unknown command" or "coming soon"**: You ran an `orbitchain-cli` command
+- **"Unknown command" or "coming soon"**: You ran an `nexora-cli` command
   that is still a stub (`deploy`, `invoke`, `account`). Run
-  `cargo run -p orbitchain-tools` with no arguments to see which commands are
+  `cargo run -p nexora-tools` with no arguments to see which commands are
   actually implemented, and follow
   [`docs/deployment.md`](docs/deployment.md#known-limitations--cli-status).
 - **"No contract ID found"**: Run `make deploy-testnet` first — the
-  `scripts/deploy.sh` wrapper writes the ID to `.orbitchain_contract_id`.
-- **"Configuration error"**: Run `cargo run -p orbitchain-tools -- config` to
+  `scripts/deploy.sh` wrapper writes the ID to `.nexora_contract_id`.
+- **"Configuration error"**: Run `cargo run -p nexora-tools -- config` to
   inspect resolved environment values.
 - **"soroban: command not found"**: Install with `cargo install --locked stellar-cli --features opt`.
 
@@ -447,7 +447,7 @@ stellar contract invoke \
 
 ## 🏗️ Architecture Overview
 
-OrbitChain Blockchain Layer is built with:
+Nexora Blockchain Layer is built with:
 
 - Stellar Testnet / Mainnet support
 - Donation verification
@@ -456,7 +456,7 @@ OrbitChain Blockchain Layer is built with:
 
 ## 💰 Fee Estimation System
 
-OrbitChain includes a comprehensive **fee estimation service** that provides accurate transaction fee calculations, surge pricing detection, and multi-currency conversion.
+Nexora includes a comprehensive **fee estimation service** that provides accurate transaction fee calculations, surge pricing detection, and multi-currency conversion.
 
 ### Features
 
@@ -501,8 +501,8 @@ async fn main() -> Result<()> {
 Click the **“Fork”** button in the top‑right of the GitHub repo and clone your fork:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/orbitchain-contract.git
-cd orbitchain-contract
+git clone https://github.com/Dreamville01/Nexora_contract.git
+cd nexora-contract
 ```
 
 ### 2. Create a Branch
@@ -605,7 +605,7 @@ Environment variable override behavior
 Verify the resolved network with the included CLI tool:
 
 ```bash
-cargo run -p orbitchain-tools -- network
+cargo run -p nexora-tools -- network
 ```
 
 See `.env.example` for a safe example of environment variables you can copy to `.env`.
