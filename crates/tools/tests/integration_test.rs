@@ -64,9 +64,9 @@ fn test_signing_and_response_integration() {
 
 // Module references for the test
 mod signing_request {
-    pub use orbitchain_tools::signing_request::*;
+    pub use nexora_tools::signing_request::*;
 }
 
 mod response_handler {
-    pub use orbitchain_tools::response_handler::*;
+    pub use nexora_tools::response_handler::*;
 }

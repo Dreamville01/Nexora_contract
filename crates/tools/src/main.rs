@@ -1,4 +1,4 @@
-//! OrbitChain CLI entry point.
+//! Nexora CLI entry point.
 //!
 //! Parses sub-commands for config, network, vault, asset, signing, response,
 //! keymanager, keypair, deploy, invoke, and account operations.
@@ -59,17 +59,17 @@ fn main() -> Result<()> {
             println!();
             print_available_commands();
             println!("🔗 See docs/deployment.md (Known Limitations) for unimplemented commands.");
-            println!("   This gap is tracked in https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37");
+            println!("   This gap is tracked in https://github.com/Dreamville01/Nexora_contract/issues/37");
             Ok(())
         }
     }
 }
 
-/// Print the OrbitChain CLI banner shown when no arguments are supplied,
+/// Print the Nexora CLI banner shown when no arguments are supplied,
 /// or after an unknown command is requested.
 fn print_cli_banner() {
-    println!("OrbitChain CLI — Soroban Contract Management Tool");
-    println!("Usage: orbitchain-cli <command> [args...]");
+    println!("Nexora CLI — Soroban Contract Management Tool");
+    println!("Usage: nexora-cli <command> [args...]");
 }
 
 /// Print every command currently wired into the dispatcher, grouped by area.
@@ -94,7 +94,7 @@ fn print_available_commands() {
     println!("  invoke <method>       - Stub. Use `stellar contract invoke` natively.");
     println!("  account               - Stub. Use `keypair generate-master|fund` instead.");
     println!();
-    println!("Run `orbitchain-cli <command>` (no subcommand) for usage details.");
+    println!("Run `nexora-cli <command>` (no subcommand) for usage details.");
     println!("Full status of every command mentioned in docs: docs/deployment.md.");
 }
 
@@ -165,13 +165,13 @@ fn handle_deploy() -> Result<()> {
     println!("     make deploy-testnet                  # uses scripts/deploy.sh + stellar contract deploy");
     println!("     bash scripts/deploy.sh testnet       # ditto, direct script invocation");
     println!("        (loads $SOROBAN_ADMIN_SECRET_KEY from .env, deploys the WASM at");
-    println!("         target/wasm32v1-none/release/orbitchain_core.wasm to testnet)");
+    println!("         target/wasm32v1-none/release/nexora_core.wasm to testnet)");
     println!("     stellar contract deploy \\");
-    println!("         --wasm target/wasm32v1-none/release/orbitchain_core.wasm \\");
+    println!("         --wasm target/wasm32v1-none/release/nexora_core.wasm \\");
     println!("         --source \"$SOROBAN_ADMIN_SECRET_KEY\" --network testnet      # native fallback");
-    println!("⚠️  Note: the deploy scripts currently ship the legacy `orbitchain-core`");
-    println!("    binary even though `orbitchain-campaign` is canonical (see README).");
-    println!("🔗 Tracked in: https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37");
+    println!("⚠️  Note: the deploy scripts currently ship the legacy `nexora-core`");
+    println!("    binary even though `nexora-campaign` is canonical (see README).");
+    println!("🔗 Tracked in: https://github.com/Dreamville01/Nexora_contract/issues/37");
     Ok(())
 }
 
@@ -192,19 +192,19 @@ fn handle_invoke(args: &[String]) -> Result<()> {
         println!("         --network testnet \\");
         println!("         -- {} [args...]", args[0]);
     }
-    println!("🔗 Tracked in: https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37");
+    println!("🔗 Tracked in: https://github.com/Dreamville01/Nexora_contract/issues/37");
     Ok(())
 }
 
 fn handle_account() -> Result<()> {
     println!("👤 The 'account' command is a stub and is NOT yet implemented in this binary.");
     println!("💡 The account/keypair lifecycle is implemented under the `keypair` namespace:");
-    println!("     orbitchain-cli keypair generate-master      # create a master keypair");
-    println!("     orbitchain-cli keypair generate-distribution <issuing_public_key>");
-    println!("     orbitchain-cli keypair fund <account_public_key> <amount_xlm>");
-    println!("     orbitchain-cli keypair show-master|show-distribution");
-    println!("     orbitchain-cli keypair validate-master|validate-distribution");
-    println!("🔗 Tracked in: https://github.com/OrbitChainLabs/OrbitChain-Contracts/issues/37");
+    println!("     nexora-cli keypair generate-master      # create a master keypair");
+    println!("     nexora-cli keypair generate-distribution <issuing_public_key>");
+    println!("     nexora-cli keypair fund <account_public_key> <amount_xlm>");
+    println!("     nexora-cli keypair show-master|show-distribution");
+    println!("     nexora-cli keypair validate-master|validate-distribution");
+    println!("🔗 Tracked in: https://github.com/Dreamville01/Nexora_contract/issues/37");
     Ok(())
 }
 
@@ -224,7 +224,7 @@ fn handle_vault() -> Result<()> {
 
 fn handle_toggle(args: &[String]) -> Result<()> {
     if args.is_empty() {
-        println!("Usage: orbitchain-cli toggle <testnet|mainnet>");
+        println!("Usage: nexora-cli toggle <testnet|mainnet>");
         return Ok(());
     }
 
@@ -235,7 +235,7 @@ fn handle_asset(args: &[String]) -> Result<()> {
     if args.is_empty() {
         println!("🪙 Asset Management Commands");
         println!("━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        println!("Usage: orbitchain-cli asset <command>");
+        println!("Usage: nexora-cli asset <command>");
         println!();
         println!("Commands:");
         println!("  config     - Show asset configuration");
@@ -259,7 +259,7 @@ fn handle_asset(args: &[String]) -> Result<()> {
         }
         "trustline" => {
             if args.len() < 3 {
-                println!("Usage: orbitchain-cli asset trustline <holder_public_key> [asset_code]");
+                println!("Usage: nexora-cli asset trustline <holder_public_key> [asset_code]");
                 return Ok(());
             }
             
@@ -283,7 +283,7 @@ fn handle_asset(args: &[String]) -> Result<()> {
         }
         "issue" => {
             if args.len() < 3 {
-                println!("Usage: orbitchain-cli asset issue <recipient> <amount>");
+                println!("Usage: nexora-cli asset issue <recipient> <amount>");
                 return Ok(());
             }
             
@@ -307,7 +307,7 @@ fn handle_keymanager(args: &[String]) -> Result<()> {
     if args.is_empty() {
         println!("🔑 Key Manager Commands");
         println!("━━━━━━━━━━━━━━━━━━━━━━");
-        println!("Usage: orbitchain-cli keymanager <command>");
+        println!("Usage: nexora-cli keymanager <command>");
         println!();
         println!("Commands:");
         println!("  encrypt <password> <secret_key>  - Encrypt a secret key");
@@ -322,7 +322,7 @@ fn handle_keymanager(args: &[String]) -> Result<()> {
     match args[0].as_str() {
         "encrypt" => {
             if args.len() < 3 {
-                println!("Usage: orbitchain-cli keymanager encrypt <password> <secret_key>");
+                println!("Usage: nexora-cli keymanager encrypt <password> <secret_key>");
                 return Ok(());
             }
             
@@ -342,7 +342,7 @@ fn handle_keymanager(args: &[String]) -> Result<()> {
         }
         "decrypt" => {
             if args.len() < 3 {
-                println!("Usage: orbitchain-cli keymanager decrypt <password> <encrypted_hex>");
+                println!("Usage: nexora-cli keymanager decrypt <password> <encrypted_hex>");
                 return Ok(());
             }
             
@@ -361,7 +361,7 @@ fn handle_keymanager(args: &[String]) -> Result<()> {
         }
         "init-vault" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli keymanager init-vault <password>");
+                println!("Usage: nexora-cli keymanager init-vault <password>");
                 return Ok(());
             }
             
@@ -379,7 +379,7 @@ fn handle_keymanager(args: &[String]) -> Result<()> {
         }
         "vault-save" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli keymanager vault-save <path>");
+                println!("Usage: nexora-cli keymanager vault-save <path>");
                 return Ok(());
             }
             
@@ -389,7 +389,7 @@ fn handle_keymanager(args: &[String]) -> Result<()> {
         }
         "vault-load" => {
             if args.len() < 3 {
-                println!("Usage: orbitchain-cli keymanager vault-load <path> <password>");
+                println!("Usage: nexora-cli keymanager vault-load <path> <password>");
                 return Ok(());
             }
             
@@ -412,7 +412,7 @@ fn handle_keypair(args: &[String]) -> Result<()> {
     if args.is_empty() {
         println!("🔑 Keypair Management Commands");
         println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        println!("Usage: orbitchain-cli keypair <command>");
+        println!("Usage: nexora-cli keypair <command>");
         println!();
         println!("Commands:");
         println!("  generate-master                      - Generate master keypair");
@@ -437,11 +437,11 @@ fn handle_keypair(args: &[String]) -> Result<()> {
             
             println!();
             println!("💡 Store this keypair securely:");
-            println!("   orbitchain-cli keymanager encrypt '<password>' '{}'", keypair.secret_key);
+            println!("   nexora-cli keymanager encrypt '<password>' '{}'", keypair.secret_key);
         }
         "generate-distribution" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli keypair generate-distribution <issuing_public_key>");
+                println!("Usage: nexora-cli keypair generate-distribution <issuing_public_key>");
                 return Ok(());
             }
             
@@ -465,7 +465,7 @@ fn handle_keypair(args: &[String]) -> Result<()> {
                 }
                 Err(_) => {
                     println!("❌ Master keypair not found in vault");
-                    println!("💡 Generate it with: orbitchain-cli keypair generate-master");
+                    println!("💡 Generate it with: nexora-cli keypair generate-master");
                 }
             }
         }
@@ -477,13 +477,13 @@ fn handle_keypair(args: &[String]) -> Result<()> {
                 }
                 Err(_) => {
                     println!("❌ Distribution account not found in vault");
-                    println!("💡 Generate it with: orbitchain-cli keypair generate-distribution <issuing_key>");
+                    println!("💡 Generate it with: nexora-cli keypair generate-distribution <issuing_key>");
                 }
             }
         }
         "fund" => {
             if args.len() < 3 {
-                println!("Usage: orbitchain-cli keypair fund <account_public_key> <amount_xlm>");
+                println!("Usage: nexora-cli keypair fund <account_public_key> <amount_xlm>");
                 return Ok(());
             }
             
@@ -546,7 +546,7 @@ fn handle_signing(args: &[String]) -> Result<()> {
     if args.is_empty() {
         println!("🔐 Signing Request Commands");
         println!("━━━━━━━━━━━━━━━━━━━━━━━━━");
-        println!("Usage: orbitchain-cli signing <command>");
+        println!("Usage: nexora-cli signing <command>");
         println!();
         println!("Commands:");
         println!("  build-donation     - Build donation signing request");
@@ -560,7 +560,7 @@ fn handle_signing(args: &[String]) -> Result<()> {
     match args[0].as_str() {
         "build-donation" => {
             if args.len() < 4 {
-                println!("Usage: orbitchain-cli signing build-donation <donor_address> <campaign_id> <amount> [asset] [memo]");
+                println!("Usage: nexora-cli signing build-donation <donor_address> <campaign_id> <amount> [asset] [memo]");
                 return Ok(());
             }
 
@@ -596,7 +596,7 @@ fn handle_signing(args: &[String]) -> Result<()> {
         }
         "build-campaign" => {
             if args.len() < 4 {
-                println!("Usage: orbitchain-cli signing build-campaign <creator_address> <title> <goal> <deadline_timestamp>");
+                println!("Usage: nexora-cli signing build-campaign <creator_address> <title> <goal> <deadline_timestamp>");
                 return Ok(());
             }
 
@@ -623,7 +623,7 @@ fn handle_signing(args: &[String]) -> Result<()> {
         }
         "build-custom" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli signing build-custom <xdr> [description]");
+                println!("Usage: nexora-cli signing build-custom <xdr> [description]");
                 return Ok(());
             }
 
@@ -654,7 +654,7 @@ fn handle_signing(args: &[String]) -> Result<()> {
         }
         "validate" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli signing validate <json_file>");
+                println!("Usage: nexora-cli signing validate <json_file>");
                 return Ok(());
             }
 
@@ -685,7 +685,7 @@ fn handle_signing(args: &[String]) -> Result<()> {
         }
         "export" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli signing export <json_file>");
+                println!("Usage: nexora-cli signing export <json_file>");
                 println!();
                 println!("Exports a signing request in wallet-compatible format");
                 return Ok(());
@@ -729,7 +729,7 @@ fn handle_response(args: &[String]) -> Result<()> {
     if args.is_empty() {
         println!("✅ Response Handler Commands");
         println!("━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        println!("Usage: orbitchain-cli response <command>");
+        println!("Usage: nexora-cli response <command>");
         println!();
         println!("Commands:");
         println!("  process       - Process wallet response JSON");
@@ -743,7 +743,7 @@ fn handle_response(args: &[String]) -> Result<()> {
     match args[0].as_str() {
         "process" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli response process <json_response>");
+                println!("Usage: nexora-cli response process <json_response>");
                 return Ok(());
             }
 
@@ -763,7 +763,7 @@ fn handle_response(args: &[String]) -> Result<()> {
         }
         "validate" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli response validate <json_file>");
+                println!("Usage: nexora-cli response validate <json_file>");
                 return Ok(());
             }
 
@@ -797,7 +797,7 @@ fn handle_response(args: &[String]) -> Result<()> {
         }
         "save" => {
             if args.len() < 3 {
-                println!("Usage: orbitchain-cli response save <json_response> <output_file>");
+                println!("Usage: nexora-cli response save <json_response> <output_file>");
                 return Ok(());
             }
 
@@ -823,7 +823,7 @@ fn handle_response(args: &[String]) -> Result<()> {
         }
         "load" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli response load <json_file>");
+                println!("Usage: nexora-cli response load <json_file>");
                 return Ok(());
             }
 
@@ -847,7 +847,7 @@ fn handle_response(args: &[String]) -> Result<()> {
         }
         "submit" => {
             if args.len() < 2 {
-                println!("Usage: orbitchain-cli response submit <json_file>");
+                println!("Usage: nexora-cli response submit <json_file>");
                 return Ok(());
             }
 

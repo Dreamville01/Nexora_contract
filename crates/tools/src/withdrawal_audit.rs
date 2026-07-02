@@ -319,7 +319,7 @@ mod tests {
         // Per-test unique path under the OS temp dir; cleaned up by each test.
         let dir = std::env::temp_dir();
         let pid = std::process::id();
-        dir.join(format!("orbitchain_audit_{pid}_{name}.jsonl"))
+        dir.join(format!("nexora_audit_{pid}_{name}.jsonl"))
             .to_string_lossy()
             .into_owned()
     }

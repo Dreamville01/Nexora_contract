@@ -1,4 +1,4 @@
-//! OrbitChain Tools — CLI and library for Soroban contract management.
+//! Nexora Tools — CLI and library for Soroban contract management.
 //!
 //! Provides modules for environment configuration, secure key management,
 //! transaction signing, asset issuing, campaign payment processing, and

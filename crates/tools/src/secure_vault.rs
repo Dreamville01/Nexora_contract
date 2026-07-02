@@ -6,7 +6,7 @@
 //! # Security Notice
 //! `SecureVault::save_to_file()` has been disabled — it stored secret keys in
 //! plaintext. Use `EncryptedVault::save_to_file()` (AES-256-GCM) instead via:
-//! `orbitchain-cli keymanager vault-save <path>`
+//! `nexora-cli keymanager vault-save <path>`
 
 use anyhow::{Context, Result};
 use std::env;
@@ -121,7 +121,7 @@ impl Default for SecureVault {
     pub fn save_to_file(&self, _path: &str) -> Result<()> {
         eprintln!("🚨 ERROR: SecureVault::save_to_file() stores keys in PLAINTEXT.");
         eprintln!("   Use EncryptedVault::save_to_file() instead.");
-        eprintln!("   Example: orbitchain-cli keymanager vault-save <path>");
+        eprintln!("   Example: nexora-cli keymanager vault-save <path>");
         anyhow::bail!("Plaintext vault save disabled for security. Use EncryptedVault.");
     }
 
@@ -215,7 +215,7 @@ pub fn toggle_network(network: &str) -> Result<()> {
     pub fn save_to_file(&self, _path: &str) -> Result<()> {
         eprintln!("🚨 ERROR: SecureVault::save_to_file() stores keys in PLAINTEXT.");
         eprintln!("   Use EncryptedVault::save_to_file() instead.");
-        eprintln!("   Example: orbitchain-cli keymanager vault-save <path>");
+        eprintln!("   Example: nexora-cli keymanager vault-save <path>");
         anyhow::bail!("Plaintext vault save disabled for security. Use EncryptedVault.");
     }
 
@@ -367,5 +367,5 @@ mod tests {
     }
 
     // Reference to issue #32 for context.
-    // See: https://github.com/your-repo/OrbitChain-Contracts/issues/32
+    // See: https://github.com/Dreamville01/Nexora_contract/issues/32
 }
