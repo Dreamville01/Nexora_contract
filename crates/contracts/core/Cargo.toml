@@ -1,9 +1,9 @@
 [package]
-name = "orbitchain-core"
+name = "nexora-core"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Legacy OrbitChain campaign reference contract; canonical implementation lives in orbitchain-campaign"
+description = "Legacy Nexora campaign reference contract; canonical implementation lives in nexora-campaign"
 
 [lib]
 crate-type = ["cdylib", "lib"]

@@ -1,5 +1,5 @@
 [contract]
-name = "orbitchain-campaign"
+name = "nexora-campaign"
 version = "0.1.0"
 
 [networks.testnet]

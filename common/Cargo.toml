@@ -1,8 +1,8 @@
 [package]
-name = "orbitchain-common"
+name = "nexora-common"
 version = "0.1.0"
 edition = "2021"
-description = "OrbitChain common types — shared CampaignStatus, MilestoneStatus, and AssetInfo"
+description = "Nexora common types — shared CampaignStatus, MilestoneStatus, and AssetInfo"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

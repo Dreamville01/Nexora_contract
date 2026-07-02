@@ -1,7 +1,7 @@
-//! OrbitChain core smart contract — campaign lifecycle, donations,
+//! Nexora core smart contract — campaign lifecycle, donations,
 //! withdrawals, analytics, and dashboard reporting.
 //!
-//! Deprecated legacy/reference contract. `campaign/` (`orbitchain-campaign`)
+//! Deprecated legacy/reference contract. `campaign/` (`nexora-campaign`)
 //! is the canonical implementation for new campaign work. This crate remains
 //! in the workspace only for historical compatibility and reference while any
 //! remaining behavior is gradually migrated into the canonical contract.
@@ -23,7 +23,7 @@ const BASE_FEE: i128 = 100;
 
 // ── Error types ──────────────────────────────────────────────────────────────
 
-/// Typed error codes for the OrbitChain core contract.
+/// Typed error codes for the Nexora core contract.
 ///
 /// Each variant has a stable `u32` discriminant — **never renumber**.
 /// Callers can match on these codes programmatically instead of parsing
@@ -228,10 +228,10 @@ fn panic_with_error(env: &Env, error: CoreError) -> ! {
 // ── Contract ─────────────────────────────────────────────────────────────────
 
 #[contract]
-pub struct OrbitChainContract;
+pub struct NexoraContract;
 
 #[contractimpl]
-impl OrbitChainContract {
+impl NexoraContract {
     /// Initialize the contract with admin address
     pub fn initialize(env: Env, admin: Address) {
         admin.require_auth();
@@ -806,8 +806,8 @@ mod tests {
     #[test]
     fn test_ping() {
         let env = Env::default();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
         assert_eq!(client.ping(), 1);
     }
 
@@ -815,8 +815,8 @@ mod tests {
     fn test_initialize() {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         client.initialize(&admin);
         assert_eq!(client.get_admin(), Some(admin));
@@ -827,8 +827,8 @@ mod tests {
         let env = Env::default();
         env.mock_all_auths();
 
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
 
         let admin = Address::generate(&env);
         client.initialize(&admin);
@@ -864,8 +864,8 @@ mod tests {
     fn test_validate_recipient() {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
         let recipient = Address::generate(&env);
         assert!(client.validate_recipient(&recipient));
     }
@@ -875,8 +875,8 @@ mod tests {
     fn test_withdraw_and_approve() {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
 
         let admin = Address::generate(&env);
         client.initialize(&admin);
@@ -912,8 +912,8 @@ mod tests {
     fn test_submit_transaction() {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
 
         let admin = Address::generate(&env);
         client.initialize(&admin);
@@ -940,8 +940,8 @@ mod tests {
     fn test_prevent_double_withdrawal() {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
 
         let admin = Address::generate(&env);
         client.initialize(&admin);
@@ -965,8 +965,8 @@ mod tests {
     fn test_total_tx_count() {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
 
         let admin = Address::generate(&env);
         client.initialize(&admin);
@@ -993,10 +993,10 @@ mod tests {
     fn setup_with_campaigns(
         env: &Env,
         n: u32,
-    ) -> (OrbitChainContractClient<'_>, Address, Address, Vec<u64>) {
+    ) -> (NexoraContractClient<'_>, Address, Address, Vec<u64>) {
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(env, &contract_id);
         let admin = Address::generate(env);
         client.initialize(&admin);
         let creator = Address::generate(env);
@@ -1087,8 +1087,8 @@ mod tests {
     fn test_campaign_report_progress_clamped() {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         client.initialize(&admin);
         let creator = Address::generate(&env);
@@ -1159,8 +1159,8 @@ mod tests {
     fn test_dashboard_metrics_empty_contract() {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, OrbitChainContract);
-        let client = OrbitChainContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, NexoraContract);
+        let client = NexoraContractClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         client.initialize(&admin);
 

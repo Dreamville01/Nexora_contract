@@ -1,4 +1,4 @@
-//! Common types shared across the OrbitChain workspace.
+//! Common types shared across the Nexora workspace.
 //!
 //! This crate provides canonical definitions for `CampaignStatus`, `MilestoneStatus`,
 //! and `AssetInfo` used by both campaign and core contracts.
@@ -6,7 +6,7 @@
 //! This crate intentionally does **not** define a `#[contracterror]` enum.
 //! Contract-specific crates own their typed error spaces so shared data types
 //! cannot accidentally collide with stable on-chain error discriminants.
-//! Campaign errors live in `orbitchain-campaign::types::Error`; the deprecated
+//! Campaign errors live in `nexora-campaign::types::Error`; the deprecated
 //! reference core contract keeps its separate `CoreError` until it is retired.
 
 #![no_std]

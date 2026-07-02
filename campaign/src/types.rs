@@ -10,7 +10,7 @@ use soroban_sdk::{
 ///
 /// Codes are stable — never renumber an existing variant; only append new ones.
 /// Each code maps to a `u32` via `contracterror` and is surfaced in transaction
-/// results as `Error(Contract, #N)`. The shared `orbitchain-common` crate
+/// results as `Error(Contract, #N)`. The shared `nexora-common` crate
 /// intentionally does not define a `#[contracterror]` enum, so these campaign
 /// discriminants cannot collide with a second shared error space.
 #[contracterror]
@@ -119,7 +119,7 @@ mod error_code_tests {
     use super::Error;
     #[test]
     fn campaign_error_discriminants_are_unique_without_common_error_space() {
-        // `orbitchain-common` intentionally exposes no `#[contracterror]` enum;
+        // `nexora-common` intentionally exposes no `#[contracterror]` enum;
         // this guards the remaining campaign-local error space against internal
         // duplicate discriminants while preserving the stable on-chain codes.
         let campaign_codes = [

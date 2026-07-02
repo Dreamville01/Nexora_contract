@@ -1,8 +1,8 @@
 [package]
-name = "orbitchain-campaign"
+name = "nexora-campaign"
 version = "0.1.0"
 edition = "2021"
-description = "OrbitChain campaign smart contract — milestones, donations, refunds, and lifecycle"
+description = "Nexora campaign smart contract — milestones, donations, refunds, and lifecycle"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
