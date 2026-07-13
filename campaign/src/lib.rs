@@ -62,6 +62,22 @@ impl CampaignContract {
     /// Requires: Creator authorization via `creator.require_auth()`
     /// Can only be called once per contract instance
     ///
+    /// # Parameters
+    /// - `creator` - address that will own the campaign and receive creator
+    ///   privileges; must authorize this call.
+    /// - `goal_amount` - total funding target in base units; must be > 0.
+    /// - `end_time` - UNIX timestamp after which donations are rejected;
+    ///   must be later than the current ledger timestamp.
+    /// - `accepted_assets` - non-empty list of assets the campaign will accept.
+    /// - `milestones` - 1-5 milestones sorted by strictly ascending
+    ///   `target_amount`, with the last milestone's `target_amount` equal to
+    ///   `goal_amount`.
+    /// - `min_donation_amount` - minimum accepted donation amount; `0`
+    ///   disables the minimum.
+    ///
+    /// # Returns
+    /// `Ok(())` once the campaign and its milestones have been written to storage.
+    ///
     /// # Panics
     /// - `Error::Unauthorized`   if caller is not the creator
     /// - `Error::AlreadyInitialized`    if campaign already exists
@@ -144,16 +160,30 @@ impl CampaignContract {
         Ok(())
     }
 
-    /// Issue #194 – Donate to the campaign, enforcing campaign status.
+    /// Donate to the campaign in the given asset.
     ///
+    /// Issue #194 – Donate to the campaign, enforcing campaign status.
     /// Issue #242 – Reentrancy protection: acquires lock at entry, releases at exit.
     /// Issue #243 – Authorization: `donor.require_auth()`.
-    ///
-    /// Panics with `Error::CampaignNotActive` unless status is `Active` or `GoalReached`.
-    ///
     /// Issue #195 – After updating raised_amount, loops over milestones and unlocks
     ///              any whose target_amount <= raised_amount and status == Locked.
     /// Issue #198 – After donation, transitions to GoalReached if raised_amount >= goal_amount.
+    ///
+    /// # Parameters
+    /// - `donor` - address making the donation; must authorize this call.
+    /// - `amount` - donation amount in base units; must be positive and meet
+    ///   `min_donation_amount` if one is configured.
+    /// - `asset` - asset being donated, either `Native` (XLM) or a specific
+    ///   `Stellar` token contract address; must be in the campaign's accepted
+    ///   assets list.
+    ///
+    /// # Panics
+    /// - `Error::ContractFrozen` if the contract is currently frozen.
+    /// - `Error::NotInitialized` if the campaign has not been initialized.
+    /// - `Error::CampaignNotActive` unless status is `Active` or `GoalReached`.
+    /// - `Error::DonationTooSmall` if `amount <= 0` or below `min_donation_amount`.
+    /// - `Error::Overflow` if updating the raised totals would overflow.
+    /// - `Error::AssetNotAccepted` if `asset` is not in the campaign's accepted list.
     pub fn donate(env: Env, donor: Address, amount: i128, asset: AssetInfo) {
         // Issue #242 – Reentrancy protection: acquire lock
         acquire_lock(&env);
@@ -264,28 +294,48 @@ impl CampaignContract {
         release_lock(&env);
     }
 
-    /// Issue #197 – Returns the total amount raised by the campaign.
-    /// No auth required. Returns 0 if no donations yet.
+    /// Returns the total amount raised by the campaign across all assets.
+    ///
+    /// Issue #197. No auth required.
+    ///
+    /// # Returns
+    /// Cumulative donated amount in base units; `0` if no donations have
+    /// been made yet.
     pub fn get_total_raised(env: Env) -> i128 {
         storage_get_total_raised(&env)
     }
 
     /// Returns the number of accepted donation calls.
+    ///
+    /// # Returns
+    /// Count of successful `donate` calls processed by this contract.
     pub fn get_donation_count(env: Env) -> u64 {
         storage_get_donation_count(&env)
     }
 
     /// Returns the number of unique donors tracked by this campaign.
+    ///
+    /// # Returns
+    /// Count of distinct donor addresses that have made at least one donation.
     pub fn get_donor_count(env: Env) -> u32 {
         storage_get_unique_donor_count(&env)
     }
 
     /// Returns the number of completed milestone releases.
+    ///
+    /// # Returns
+    /// Count of successful milestone release calls (single- and multi-asset).
     pub fn get_release_count(env: Env) -> u64 {
         storage_get_release_count(&env)
     }
 
     /// Returns all tracked campaign transactions: donations plus releases.
+    ///
+    /// # Returns
+    /// Sum of the donation count and the release count.
+    ///
+    /// # Panics
+    /// - `Error::Overflow` if the sum of donation and release counts overflows `u64`.
     pub fn get_total_tx_count(env: Env) -> u64 {
         storage_get_donation_count(&env)
             .checked_add(storage_get_release_count(&env))
@@ -293,11 +343,22 @@ impl CampaignContract {
     }
 
     /// Returns dashboard-ready campaign analytics.
+    ///
+    /// # Returns
+    /// `Some(CampaignReport)` describing progress, status, and counters if the
+    /// campaign has been initialized; `None` otherwise.
     pub fn get_campaign_report(env: Env) -> Option<CampaignReport> {
         get_campaign(&env).map(|campaign| build_campaign_report(&env, campaign))
     }
 
     /// Returns export-friendly aggregate counters for this contract instance.
+    ///
+    /// # Returns
+    /// A `PlatformSummary` with campaign, donation, and release totals for
+    /// this single-campaign contract.
+    ///
+    /// # Panics
+    /// - `Error::Overflow` if the total transaction count overflows `u64`.
     pub fn get_platform_summary(env: Env) -> PlatformSummary {
         let total_campaigns = if get_campaign(&env).is_some() { 1 } else { 0 };
         let active_campaigns = active_campaign_count(&env);
@@ -317,6 +378,13 @@ impl CampaignContract {
     }
 
     /// Returns compact metrics for campaign dashboards.
+    ///
+    /// # Returns
+    /// A `DashboardMetrics` mirroring [`Self::get_platform_summary`] for the
+    /// legacy analytics API shape.
+    ///
+    /// # Panics
+    /// - `Error::Overflow` if the underlying platform summary computation overflows.
     pub fn get_dashboard_metrics(env: Env) -> DashboardMetrics {
         let summary = Self::get_platform_summary(env);
         DashboardMetrics {
@@ -328,16 +396,34 @@ impl CampaignContract {
         }
     }
 
-    /// Issue #196 – Returns the donor record for the given address.
-    /// No auth required. Returns None if the address has never donated.
+    /// Returns the donor record for the given address.
+    ///
+    /// Issue #196. No auth required.
+    ///
+    /// # Parameters
+    /// - `donor` - address to look up.
+    ///
+    /// # Returns
+    /// `Some(DonorRecord)` with cumulative donation data if `donor` has ever
+    /// donated; `None` otherwise.
     pub fn get_donor_record(env: Env, donor: Address) -> Option<DonorRecord> {
         get_donor(&env, &donor)
     }
 
+    /// Returns a fixed contract identifier symbol.
+    ///
+    /// Useful for connectivity checks and client bootstrapping. No auth required.
+    ///
+    /// # Returns
+    /// The symbol `"campaign"`.
     pub fn hello(env: Env) -> soroban_sdk::Symbol {
         soroban_sdk::Symbol::new(&env, "campaign")
     }
 
+    /// Returns the contract's compiled version number.
+    ///
+    /// # Returns
+    /// The value of [`VERSION`].
     pub fn version() -> u32 {
         VERSION
     }
@@ -353,6 +439,13 @@ impl CampaignContract {
     ///
     /// This view function exposes the on-chain refund policy transparently.
     /// No auth required (read-only).
+    ///
+    /// # Parameters
+    /// - `donor` - address to check refund eligibility for.
+    ///
+    /// # Returns
+    /// `true` if `donor` may currently call `claim_refund` successfully;
+    /// `false` if the campaign or donor is unknown, or any eligibility check fails.
     pub fn is_refund_eligible(env: Env, donor: Address) -> bool {
         let campaign = match get_campaign(&env) {
             Some(c) => c,
@@ -374,7 +467,11 @@ impl CampaignContract {
     /// Issue #243 – Authorization: `donor.require_auth()`.
     /// Issue #244 – Balance verification: checks contract balance before each transfer.
     ///
+    /// # Parameters
+    /// - `donor` - address claiming the refund; must authorize this call.
+    ///
     /// # Panics
+    /// - `Error::ContractFrozen` if the contract is currently frozen.
     /// - `Error::NotInitialized` if campaign not initialized
     /// - `Error::NoDonorRecord` if donor has never donated
     /// - `Error::RefundNotPermitted` if milestone already released
@@ -481,6 +578,12 @@ impl CampaignContract {
     ///
     /// Issue #243 – Authorization: `creator.require_auth()`.
     /// Transitions to `Ended` status. No refunds after milestones are released.
+    ///
+    /// # Panics
+    /// - `Error::NotInitialized` if campaign not initialized.
+    /// - `Error::Unauthorized` if caller is not the creator.
+    /// - `Error::ContractFrozen` if the contract is currently frozen.
+    /// - `Error::InvalidCampaignTransition` if campaign is already `Ended` or `Cancelled`.
     pub fn end_campaign(env: Env) {
         contract::end_campaign(&env);
     }
@@ -489,6 +592,12 @@ impl CampaignContract {
     ///
     /// Issue #243 – Authorization: `creator.require_auth()`.
     /// Transitions to `Cancelled` status. All donors become refund-eligible.
+    ///
+    /// # Panics
+    /// - `Error::NotInitialized` if campaign not initialized.
+    /// - `Error::Unauthorized` if caller is not the creator.
+    /// - `Error::ContractFrozen` if the contract is currently frozen.
+    /// - `Error::InvalidCampaignTransition` if campaign is already `Cancelled`.
     pub fn cancel_campaign(env: Env) {
         contract::cancel_campaign(&env);
     }
@@ -499,21 +608,61 @@ impl CampaignContract {
     /// Only callable while campaign is Active or GoalReached.
     /// New deadline must be in the future and no more than ten years from the
     /// current ledger timestamp.
+    ///
+    /// # Parameters
+    /// - `new_end_time` - new UNIX timestamp for the campaign deadline; must
+    ///   be later than the current ledger timestamp and no more than ten
+    ///   years (`MAX_DEADLINE_GAP_SECONDS`) beyond it.
+    ///
+    /// # Panics
+    /// - `Error::NotInitialized` if campaign not initialized.
+    /// - `Error::Unauthorized` if caller is not the creator.
+    /// - `Error::ContractFrozen` if the contract is currently frozen.
+    /// - `Error::InvalidEndTime` if `new_end_time` is not in the future or
+    ///   exceeds the maximum allowed extension.
+    /// - `Error::InvalidCampaignTransition` if campaign is not `Active` or `GoalReached`.
     pub fn extend_deadline(env: Env, new_end_time: u64) {
         contract::extend_deadline(&env, new_end_time);
     }
 
     /// Issue #235 – Get campaign status with computed fields.
     /// No auth required (read-only view).
+    ///
+    /// # Returns
+    /// A `CampaignStatusResponse` with the current `CampaignStatus` and the
+    /// number of days remaining until the deadline (negative if it has passed).
+    ///
+    /// # Panics
+    /// - `Error::NotInitialized` if campaign not initialized.
     pub fn get_campaign_status(env: Env) -> CampaignStatusResponse {
         contract::get_campaign_status(&env)
     }
 
-    /// Issue #207 – Release a single milestone (all assets proportionally).
+    /// Issue #207 – Release a single milestone from the campaign's primary
+    /// (first) accepted asset.
     ///
     /// Issue #242 – Reentrancy protection: acquires lock at entry, releases at exit.
     /// Issue #243 – Authorization: `creator.require_auth()`.
     /// Issue #244 – Balance verification: checks contract balance before each transfer.
+    ///
+    /// For campaigns accepting multiple assets, use
+    /// [`Self::release_milestone_multi_asset`] instead, which distributes the
+    /// release proportionally across all assets.
+    ///
+    /// # Parameters
+    /// - `milestone_index` - zero-based index of the milestone to release;
+    ///   must be `Unlocked` and all prior milestones must already be `Released`.
+    /// - `recipient` - address that receives the released funds.
+    ///
+    /// # Panics
+    /// - `Error::NotInitialized` if campaign not initialized.
+    /// - `Error::Unauthorized` if caller is not the creator.
+    /// - `Error::ContractFrozen` if the contract is currently frozen.
+    /// - `Error::MilestoneNotFound` if `milestone_index` is out of range.
+    /// - `Error::InvalidMilestoneTransition` if the milestone is not `Unlocked`.
+    /// - `Error::PreviousMilestoneNotReleased` if a prior milestone is not yet `Released`.
+    /// - `Error::MilestoneAlreadyReleased` if the milestone is already `Released`.
+    /// - `Error::InsufficientContractBalance` if the contract lacks funds for the transfer.
     pub fn release_milestone(env: Env, milestone_index: u32, recipient: Address) {
         // Issue #243 – Authorization: hoisted here so mock_all_auths() in tests
         // can intercept require_auth() within the contract invocation frame.
@@ -528,6 +677,23 @@ impl CampaignContract {
     /// Issue #242 – Reentrancy protection: acquires lock at entry, releases at exit.
     /// Issue #243 – Authorization: `creator.require_auth()`.
     /// Issue #244 – Balance verification: checks contract balance before each transfer.
+    ///
+    /// # Parameters
+    /// - `milestone_index` - zero-based index of the milestone to release;
+    ///   must be `Unlocked`.
+    /// - `recipient` - address that receives the released funds; must not be
+    ///   the contract's own address.
+    ///
+    /// # Panics
+    /// - `Error::NotInitialized` if campaign not initialized.
+    /// - `Error::Unauthorized` if caller is not the creator.
+    /// - `Error::InvalidRecipient` if `recipient` is the contract's own address.
+    /// - `Error::MilestoneNotFound` if `milestone_index` is out of range.
+    /// - `Error::InvalidMilestoneTransition` if the milestone is not `Unlocked`.
+    /// - `Error::NothingToRelease` if there is no remaining amount to release.
+    /// - `Error::MilestoneReleasedExceedsTarget` if released amount would exceed the target.
+    /// - `Error::Overflow` if proportional-release arithmetic overflows.
+    /// - `Error::InsufficientContractBalance` if the contract lacks funds for a transfer.
     pub fn release_milestone_multi_asset(env: Env, milestone_index: u32, recipient: Address) {
         // Issue #243 – Authorization: hoisted here so mock_all_auths() in tests
         // can intercept require_auth() within the contract invocation frame.
@@ -539,12 +705,30 @@ impl CampaignContract {
 
     /// Issue #199 – Get milestone view (raw data).
     /// No auth required (read-only view).
+    ///
+    /// # Parameters
+    /// - `index` - zero-based milestone index; must be less than the
+    ///   campaign's `milestone_count`.
+    ///
+    /// # Returns
+    /// The raw `MilestoneData` stored for `index`.
+    ///
+    /// # Panics
+    /// - `Error::NotInitialized` if campaign not initialized.
+    /// - `Error::MilestoneNotFound` if `index` is out of range.
     pub fn get_milestone_view(env: Env, index: u32) -> MilestoneData {
         get_milestone::get_milestone_view(&env, index)
     }
 
     /// Issue #200 – Get all milestones (enriched views).
     /// No auth required (read-only view).
+    ///
+    /// # Returns
+    /// A `Vec<MilestoneView>` with one enriched entry per milestone, each
+    /// including `pending_release`, `is_fully_released`, and `is_next_pending`.
+    ///
+    /// # Panics
+    /// - `Error::NotInitialized` if campaign not initialized.
     pub fn get_all_milestones(env: Env) -> Vec<views::MilestoneView> {
         get_all_milestones::get_all_milestones_view(&env)
     }
@@ -553,6 +737,10 @@ impl CampaignContract {
     ///
     /// Only the admin (creator address stored at initialization) can call this.
     /// Emits `contract_upgraded` event on success.
+    ///
+    /// # Parameters
+    /// - `new_wasm_hash` - hash of the new contract WASM to deploy in place
+    ///   of the current code.
     ///
     /// # Panics
     /// - `Error::Unauthorized` if not called by the creator
@@ -754,6 +942,16 @@ fn check_refund_eligibility(
 ///
 /// Returns `Result<(), Error>` which is already `#[must_use]`, so no extra
 /// attribute is needed (clippy `double_must_use`).
+///
+/// # Parameters
+/// - `current_status` - the campaign's status before the transition.
+/// - `next_status` - the proposed status to transition to.
+///
+/// # Returns
+/// `Ok(())` if the transition from `current_status` to `next_status` is permitted.
+///
+/// # Panics
+/// - `Error::InvalidCampaignTransition` if the transition is not permitted.
 pub fn validate_campaign_transition(
     env: &Env,
     current_status: &CampaignStatus,
@@ -779,6 +977,16 @@ pub fn validate_campaign_transition(
 ///
 /// Returns `Result<(), Error>` which is already `#[must_use]`, so no extra
 /// attribute is needed (clippy `double_must_use`).
+///
+/// # Parameters
+/// - `current_status` - the milestone's status before the transition.
+/// - `next_status` - the proposed status to transition to.
+///
+/// # Returns
+/// `Ok(())` if the transition from `current_status` to `next_status` is permitted.
+///
+/// # Panics
+/// - `Error::InvalidMilestoneTransition` if the transition is not permitted.
 pub fn validate_milestone_transition(
     env: &Env,
     current_status: &MilestoneStatus,
